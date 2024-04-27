@@ -7,7 +7,6 @@
 #include <vector>
 #include <deque>
 #include <mutex>
-#include <span>
 //--------------------------------------------------------------
 namespace CircularBuffer {
     //--------------------------------------------------------------
@@ -41,7 +40,7 @@ namespace CircularBuffer {
                 return pop_front();
             }// end void pop(void)
             //--------------------------
-            void top(void){
+            std::optional<T> top(void){
                 return get_top();
             }//end void top(void)
             //--------------------------
@@ -60,10 +59,6 @@ namespace CircularBuffer {
             void reset(void){
                 clear();
             }// end void reset(void)
-            //--------------------------
-            std::optional<std::span<T>> span(void){
-                return get_span();
-            }// end std::optional<std::span<T>> span(void)
             //--------------------------
             typename std::deque<T>::iterator begin(void) {
                 return m_buffer.begin();
@@ -200,24 +195,6 @@ namespace CircularBuffer {
                 m_buffer.clear();
                 //--------------------------
             }// end void clear(void)
-            //--------------------------
-            std::optional<std::span<T>> get_span(void)  {
-                //--------------------------
-                std::lock_guard<std::mutex> lock(m_mutex);
-                //--------------------------
-                if (m_buffer.empty()) {
-                    return std::nullopt;
-                }// end if (m_buffer.empty())
-                //--------------------------
-                // Create a vector that copies all elements from the deque
-                //--------------------------
-                std::vector<T> contiguous_copy(m_buffer.begin(), m_buffer.end());
-                //--------------------------
-                // Return a span constructed from this contiguous vector
-                //--------------------------
-                return std::span<T>(contiguous_copy.data(), contiguous_copy.size());
-                //--------------------------
-            }// end std::optional<std::span<T>> get_span(void)
             //--------------------------------------------------------------
         private:
             //--------------------------------------------------------------
