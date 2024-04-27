@@ -96,7 +96,7 @@ namespace CircularBuffer {
             //--------------------------------------------------------------
         protected:
             //--------------------------------------------------------------
-            void push_back(const T& item) override {
+            void push_back(const T& item)  {
                 //--------------------------
                 size_t current_tail = m_tail.load(std::memory_order_relaxed);
                 size_t next_tail = increment(current_tail);
@@ -114,7 +114,7 @@ namespace CircularBuffer {
                 //--------------------------
             }//end bool push_back(const T& item)
             //--------------------------
-            void push_back(T&& item) override {
+            void push_back(T&& item)  {
                 //--------------------------
                 size_t current_tail = m_tail.load(std::memory_order_relaxed);
                 size_t next_tail = increment(current_tail);
@@ -133,7 +133,9 @@ namespace CircularBuffer {
             }//end bool push_back(const T& item)
             //--------------------------
             template <typename... Args>
-            void emplace_back(Args&&... args) override {
+            void emplace_back(Args&&... args)  {
+                //--------------------------
+                size_t current_tail{0}, next_tail{0};
                 //--------------------------
                 do {
                     size_t current_tail = m_tail.load(std::memory_order_relaxed);
@@ -152,7 +154,7 @@ namespace CircularBuffer {
                 //--------------------------
             }// end void emplace_back(Args&&... args)
             //--------------------------
-            std::optional<T> get_top(void) override {
+            std::optional<T> get_top(void)  {
                 //--------------------------
                 std::atomic_thread_fence(std::memory_order_acquire);  // Ensure visibility of writes
                 //--------------------------
@@ -166,7 +168,7 @@ namespace CircularBuffer {
                 //--------------------------
             }//end std::optional<T> get_top(void)
             //--------------------------
-            std::optional<T> get_top_pop(void) override {
+            std::optional<T> get_top_pop(void)  {
                 //--------------------------
                 size_t current_head = m_head.load(std::memory_order_relaxed), current_tail = m_tail.load(std::memory_order_relaxed);
                 //--------------------------
@@ -181,7 +183,7 @@ namespace CircularBuffer {
                 //--------------------------
             }// end std::optional<T> get_top_pop(void)
             //--------------------------
-            bool pop_front(void) override {
+            bool pop_front(void)  {
                 //--------------------------
                 size_t current_head = m_head.load(std::memory_order_relaxed);
                 //--------------------------
@@ -200,19 +202,19 @@ namespace CircularBuffer {
                 //--------------------------
             }// end bool pop_front(void)
             //--------------------------
-            bool is_empty(void) const override {
+            bool is_empty(void) const  {
                 //--------------------------
                 return m_count.load(std::memory_order_acquire) == 0;
                 //--------------------------
             }// end bool is_empty(void) const
             //--------------------------
-            size_t get_size(void) const override {
+            size_t get_size(void) const  {
                 //--------------------------
                 return m_count.load(std::memory_order_acquire);
                 //--------------------------
             }// end size_t get_size(void) const
             //--------------------------
-            void clear(void) override {
+            void clear(void)  {
                 //--------------------------
                 while (!is_empty()) {
                     pop_front();
@@ -220,7 +222,7 @@ namespace CircularBuffer {
                 //--------------------------
             }// end void clear(void)
             //--------------------------
-            std::optional<std::span<T>> get_span(void) override {
+            std::optional<std::span<T>> get_span(void)  {
                 //--------------------------
                 const size_t head   = m_head.load(std::memory_order_acquire);
                 const size_t tail   = m_tail.load(std::memory_order_acquire);
