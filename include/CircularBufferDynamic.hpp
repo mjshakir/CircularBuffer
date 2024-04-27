@@ -99,7 +99,7 @@ namespace CircularBuffer {
             //--------------------------------------------------------------
         protected:
             //--------------------------------------------------------------
-            void push_back(const T& item) override {
+            void push_back(const T& item)  {
                 //--------------------------
                 std::unique_lock<std::mutex> lock(m_mutex);
                 //--------------------------
@@ -111,7 +111,7 @@ namespace CircularBuffer {
                 //--------------------------
             }// end void push_back(const T& item)
             //--------------------------
-            void push_back(T&& item) override {
+            void push_back(T&& item)  {
                 //--------------------------
                 std::unique_lock<std::mutex> lock(m_mutex);
                 //--------------------------
@@ -124,7 +124,7 @@ namespace CircularBuffer {
             }// end void push_back(T&& item)
             //--------------------------
             template <typename... Args>
-            void emplace_back(Args&&... args) override {
+            void emplace_back(Args&&... args)  {
                 //--------------------------
                 std::unique_lock<std::mutex> lock(m_mutex);
                 //--------------------------
@@ -136,7 +136,7 @@ namespace CircularBuffer {
                 //--------------------------
             }// end void emplace_back(Args&&... args)
             //--------------------------
-            std::optional<T> get_top_pop(void) override {
+            std::optional<T> get_top_pop(void)  {
                 //--------------------------
                 std::unique_lock<std::mutex> lock(m_mutex);
                 //--------------------------
@@ -151,7 +151,7 @@ namespace CircularBuffer {
                 //--------------------------
             }// end std::optional<T> get_top_pop(void)
             //--------------------------
-            std::optional<T> get_top(void) override {
+            std::optional<T> get_top(void)  {
                 //--------------------------
                 std::unique_lock<std::mutex> lock(m_mutex);
                 //--------------------------
@@ -163,7 +163,7 @@ namespace CircularBuffer {
                 //--------------------------
             }// end T get_top(void)
             //--------------------------
-            bool pop_front(void) override {
+            bool pop_front(void)  {
                 //--------------------------
                 std::unique_lock<std::mutex> lock(m_mutex);
                 //--------------------------
@@ -177,7 +177,7 @@ namespace CircularBuffer {
                 //--------------------------
             }// end bool pop_front(void)
             //--------------------------
-            bool is_empty(void) const override {
+            bool is_empty(void) const  {
                 //--------------------------
                 std::unique_lock<std::mutex> lock(m_mutex);
                 //--------------------------
@@ -185,7 +185,7 @@ namespace CircularBuffer {
                 //--------------------------
             }// end bool is_empty(void) const
             //--------------------------
-            size_t get_size(void) const override {
+            size_t get_size(void) const  {
                 //--------------------------
                 std::unique_lock<std::mutex> lock(m_mutex);
                 //--------------------------
@@ -193,7 +193,7 @@ namespace CircularBuffer {
                 //--------------------------
             }// end size_t get_size(void) const
             //--------------------------
-            void clear(void) override {
+            void clear(void)  {
                 //--------------------------
                 std::unique_lock<std::mutex> lock(m_mutex);
                 //--------------------------
@@ -201,7 +201,7 @@ namespace CircularBuffer {
                 //--------------------------
             }// end void clear(void)
             //--------------------------
-            std::optional<std::span<T>> get_span(void) override {
+            std::optional<std::span<T>> get_span(void)  {
                 //--------------------------
                 std::lock_guard<std::mutex> lock(m_mutex);
                 //--------------------------
