@@ -1,0 +1,7 @@
+# Ignore the build directory
+build/
+
+# Ignore the DS_Store files
+DS_Store
+src/DS_Store
+include/DS_Store

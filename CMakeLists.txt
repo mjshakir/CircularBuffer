@@ -1,0 +1,172 @@
+cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
+#------------------------------------------------------------------------------------------
+# Determine if CircularBuffer is built as a standalone project or included by other projects
+set(CIRCULARBUFFER_STANDALONE_PROJECT OFF)
+if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+    set(CIRCULARBUFFER_STANDALONE_PROJECT ON)
+endif()
+#------------------------------------------------------------------------------------------
+# Get the name of the folder and use it as the project name
+get_filename_component(FOLDER_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
+set(CIRCULARBUFFER_PROJECT_NAME "${FOLDER_NAME}_circularbuffer" CACHE STRING "CircularBuffer project name")
+#------------------------------------------------------------------------------------------
+project(${CIRCULARBUFFER_PROJECT_NAME} VERSION 1.0.0 LANGUAGES CXX)
+#------------------------------------------------------------------------------------------
+# Set the C++ standard
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+#------------------------------------------------------------------------------------------
+# Print out the build type
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+#------------------------------------------------------------------------------------------
+if(MSVC)
+    # MSVC specific warning flags
+    add_library(common_options INTERFACE)
+    target_compile_options(common_options INTERFACE /W4)  # Equivalent to -Wall in GCC/Clang
+else()
+    # GCC/Clang specific warning flags
+    add_library(common_options INTERFACE)
+    target_compile_options(common_options INTERFACE -Wall -Wextra -Wpedantic -pedantic-errors -Werror=format-security -fasynchronous-unwind-tables)
+endif()
+#------------------------------------------------------------------------------------------
+# Set the runtime output directory only if this is a standalone project
+if(CIRCULARBUFFER_STANDALONE_PROJECT)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+    # message(STATUS "Library output directory: ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
+    # Optionally, to set these directories only for specific build configurations (Debug, Release, etc.),
+    # you can use the following approach:
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/lib)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/lib)
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/lib)
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/lib)
+    message(STATUS "Library output directory: ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
+    # Diagnostic output
+    message(STATUS "ARCHIVE_OUTPUT_DIRECTORY: ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
+    message(STATUS "LIBRARY_OUTPUT_DIRECTORY: ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
+    message(STATUS "RUNTIME_OUTPUT_DIRECTORY: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+endif()
+#------------------------------------------------------------------------------------------
+# Offer switches for the type of the library and optional builds
+option(BUILD_CIRCULARBUFFER_SHARED_LIBS "Build using shared libraries" ON)
+option(BUILD_CIRCULARBUFFER_EXAMPLE "Build CircularBuffer example" ${CIRCULARBUFFER_STANDALONE_PROJECT})
+option(BUILD_CIRCULARBUFFER_TESTS "Build CircularBuffer tests" ${CIRCULARBUFFER_STANDALONE_PROJECT})
+#------------------------------------------------------------------------------------------
+# Force colored output
+option(FORCE_COLORED_OUTPUT "Always produce ANSI-colored output (GNU/Clang only)." OFF)
+if(${FORCE_COLORED_OUTPUT})
+    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+        add_compile_options(-fdiagnostics-color=always)
+    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+        add_compile_options(-fcolor-diagnostics)
+    endif()
+endif()
+#------------------------------------------------------------------------------------------
+# Define the source and include directories
+set(CIRCULARBUFFER_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
+set(CIRCULARBUFFER_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
+#------------------------------------------------------------------------------------------
+# Define the source files
+set(CIRCULARBUFFER_SOURCES
+    ${CIRCULARBUFFER_SOURCE_DIR}/CircularBufferBased.cpp
+    ${CIRCULARBUFFER_SOURCE_DIR}/CircularBufferFixed.cpp
+    ${CIRCULARBUFFER_SOURCE_DIR}/CircularBufferDynamic.cpp
+    ${CIRCULARBUFFER_SOURCE_DIR}/CircularBuffer.cpp
+)
+#------------------------------------------------------------------------------------------
+# Define the CircularBuffer library target
+set(CIRCULARBUFFER_LIBRARY_NAME "${CIRCULARBUFFER_PROJECT_NAME}_lib")
+# Check if the library should be built as a shared library
+if(BUILD_CIRCULARBUFFER_SHARED_LIBS)
+    add_library(${CIRCULARBUFFER_LIBRARY_NAME} SHARED ${CIRCULARBUFFER_SOURCES})
+    # If needed, set properties specific to shared libraries here
+else()
+    add_library(${CIRCULARBUFFER_LIBRARY_NAME} STATIC ${CIRCULARBUFFER_SOURCES})
+    # If needed, set properties specific to static libraries here
+endif()
+#------------------------------------------------------------------------------------------
+target_include_directories(${CIRCULARBUFFER_LIBRARY_NAME} PUBLIC 
+    $<BUILD_INTERFACE:${CIRCULARBUFFER_INCLUDE_DIR}>
+    $<INSTALL_INTERFACE:include>
+)
+#------------------------------------------------------------------------------------------
+# Alias for CircularBuffer library
+add_library(CircularBuffer::circularbuffer ALIAS ${CIRCULARBUFFER_LIBRARY_NAME})
+#------------------------------------------------------------------------------------------
+# Set CIRCULARBUFFER_LIBRARIES variable
+if(CIRCULARBUFFER_STANDALONE_PROJECT)
+    set(CIRCULARBUFFER_LIBRARIES CircularBuffer::circularbuffer)
+else()
+    set(CIRCULARBUFFER_LIBRARIES CircularBuffer::circularbuffer PARENT_SCOPE)
+endif()
+message(STATUS "CIRCULARBUFFER_LIBRARIES: ${CIRCULARBUFFER_LIBRARIES}")
+#------------------------------------------------------------------------------------------
+# Building examples
+if(BUILD_CIRCULARBUFFER_EXAMPLE)
+    set(CIRCULARBUFFER_EXAMPLE_NAME "${CIRCULARBUFFER_PROJECT_NAME}_example")
+    add_executable(${CIRCULARBUFFER_EXAMPLE_NAME} example/main.cpp)
+    target_link_libraries(${CIRCULARBUFFER_EXAMPLE_NAME} PRIVATE ${CIRCULARBUFFER_LIBRARY_NAME})
+endif()
+#------------------------------------------------------------------------------------------
+# Compiler-specific flags
+if(MSVC)
+    set(CMAKE_CXX_FLAGS_RELEASE "/O2 /MD")
+    set(CMAKE_CXX_FLAGS_DEBUG "/Od /MDd")
+    target_compile_options(${CIRCULARBUFFER_LIBRARY_NAME} PRIVATE 
+        "$<$<CONFIG:Release>:/O2>" 
+        "$<$<CONFIG:Debug>:/Od>" 
+        "$<$<CONFIG:Debug>:/Zi>"
+    )
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        target_link_options(${CIRCULARBUFFER_LIBRARY_NAME} PRIVATE /DEBUG)
+    endif()
+
+    set_target_properties(${CIRCULARBUFFER_LIBRARY_NAME} PROPERTIES
+        WINDOWS_EXPORT_ALL_SYMBOLS TRUE
+    )
+else()
+    # For non-MSVC compilers
+    target_compile_options(${CIRCULARBUFFER_LIBRARY_NAME} PRIVATE 
+        "$<$<CONFIG:Release>:-O3>"
+    )
+    # Conditionally include AddressSanitizer flags only if standalone and in Debug mode
+    if(CIRCULARBUFFER_STANDALONE_PROJECT AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang|GNU")
+        set(SANITIZE_FLAGS "$<$<CONFIG:Debug>:-fsanitize=address>")
+        target_compile_options(${CIRCULARBUFFER_LIBRARY_NAME} PRIVATE 
+            "$<$<CONFIG:Debug>:-g>"
+            "$<$<CONFIG:Debug>:-O0>"
+            ${SANITIZE_FLAGS}
+        )
+        target_link_options(${CIRCULARBUFFER_LIBRARY_NAME} PRIVATE ${SANITIZE_FLAGS})
+    endif()
+endif()
+#------------------------------------------------------------------------------------------
+# Enable testing and add the test directory if this is a standalone project
+if(BUILD_CIRCULARBUFFER_TESTS AND CIRCULARBUFFER_STANDALONE_PROJECT)
+    find_package(GTest QUIET)
+    enable_testing()
+    add_subdirectory(test)
+endif()
+#------------------------------------------------------------------------------------------
+# Export the library targets (only if it's a standalone project)
+if(CIRCULARBUFFER_STANDALONE_PROJECT)
+    include(GNUInstallDirs)
+    install(TARGETS ${CIRCULARBUFFER_LIBRARY_NAME} EXPORT CircularBufferTargets
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    )
+
+    install(DIRECTORY ${CIRCULARBUFFER_INCLUDE_DIR}/${CIRCULARBUFFER_PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+    install(EXPORT CircularBufferTargets
+        FILE CircularBufferTargets.cmake
+        NAMESPACE CircularBuffer::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${CIRCULARBUFFER_PROJECT_NAME}
+    )
+endif()
+#------------------------------------------------------------------------------------------
