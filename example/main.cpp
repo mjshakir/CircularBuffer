@@ -7,20 +7,22 @@
 
 constexpr size_t performance_size = 1000000UL;
 
-void producer(CircularBuffer::CircularBuffer<size_t>& buffer) {
+template<typename T>
+void producer(CircularBuffer::CircularBuffer<T>& buffer) {
     for (size_t i = 0; i < 10; ++i) {
-        buffer.push(i);
+        buffer.push(static_cast<T>(i));  // Ensure correct type casting
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
 
-void consumer(CircularBuffer::CircularBuffer<size_t>& buffer) {
+template<typename T>
+void consumer(CircularBuffer::CircularBuffer<T>& buffer) {
     while (true) {
         if (!buffer.empty()) {
             auto item = buffer.top_pop();
             if (item) {
                 std::cout << "Consumed: " << *item << std::endl;
-                if (*item == buffer.size()) break;
+                if (*item == static_cast<T>(buffer.size())) break;  // Cast to T
             }
         }
     }
@@ -78,19 +80,10 @@ int main() {
 
     }
     {
-        CircularBuffer::CircularBuffer<int> buffer(10);
+        CircularBuffer::CircularBuffer<size_t> buffer(10);
 
-        std::thread prod(producer, std::ref(buffer));
-        std::thread cons(consumer, std::ref(buffer));
-
-        prod.join();
-        cons.join();
-    }
-    {
-        CircularBuffer::CircularBuffer<int> buffer(10);
-
-        std::thread prod(producer, std::ref(buffer));
-        std::thread cons(consumer, std::ref(buffer));
+        std::thread prod(producer<size_t>, std::ref(buffer));
+        std::thread cons(consumer<size_t>, std::ref(buffer));
 
         prod.join();
         cons.join();
