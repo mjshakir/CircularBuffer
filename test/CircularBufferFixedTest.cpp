@@ -5,10 +5,9 @@
 #include "CircularBufferFixed.hpp"
 
 // Test Fixture for CircularBufferFixed
-template <typename T>
-class CircularBufferFixedTest : public ::testing::Test {
-    protected:
-        CircularBuffer::CircularBufferFixed<T, 5> buffer;  // A buffer with a fixed size of 10
+class CircularBufferFixedSizeTest : public ::testing::Test {
+protected:
+    CircularBuffer::CircularBufferFixed<size_t, 5> buffer;  // Fixed size buffer
 };
 
 // Define types to run the same tests on different type specializations if needed
@@ -48,7 +47,7 @@ TYPED_TEST(CircularBufferFixedTest, BoundaryConditions) {
 }
 
 
-TEST_F(CircularBufferFixedTest<size_t>, ConcurrencyAndOrdering) {
+TEST_F(CircularBufferFixedSizeTest, ConcurrencyAndOrdering) {
     constexpr size_t num_threads = 10;
     constexpr size_t per_thread_count = 100;
     std::vector<std::thread> producers;
@@ -79,7 +78,7 @@ TEST_F(CircularBufferFixedTest<size_t>, ConcurrencyAndOrdering) {
     }
 }
 
-TEST_F(CircularBufferFixedTest<size_t>, StressRobustness) {
+TEST_F(CircularBufferFixedTest, StressRobustness) {
     constexpr size_t buffer_size = 1000000;
     try {
         for (size_t i = 0; i < buffer_size; ++i) {
@@ -92,12 +91,11 @@ TEST_F(CircularBufferFixedTest<size_t>, StressRobustness) {
 }
 
 TYPED_TEST(CircularBufferFixedTest, MemoryAndResourceManagement) {
-    constexpr size_t buffer_size = 1000;
-    for (size_t i = 0; i < buffer_size; ++i) {
-        this->buffer.push(std::to_string(i)); // Push string objects to test memory management
+    for (TypeParam i = 0; i < 1000; ++i) {
+        this->buffer.push(i); // TypeParam is the type used in the test instantiation
     }
     while (!this->buffer.empty()) {
-        this->buffer.top_pop(); // Continuously pop to check for leaks or dangling pointers
+        EXPECT_EQ(this->buffer.top_pop().value(), --i);
     }
 }
 
@@ -114,7 +112,7 @@ TYPED_TEST(CircularBufferFixedTest, WrapAround) {
 }
 
 // Test thread safety by using multiple threads to push and pop concurrently
-TEST_F(CircularBufferFixedTest<size_t>, ThreadSafety) {
+TEST_F(CircularBufferFixedTest, ThreadSafety) {
     constexpr size_t num_threads = 5;
     constexpr size_t buffer_size = 100;
     constexpr size_t total_items = num_threads * buffer_size;
@@ -152,7 +150,7 @@ TEST_F(CircularBufferFixedTest<size_t>, ThreadSafety) {
 }
 
 // Stress test to ensure stability under high load
-TEST_F(CircularBufferFixedTest<int>, StressTest) {
+TEST_F(CircularBufferFixedTest, StressTest) {
     constexpr size_t buffer_size = 100000;
     for (int i = 0; i < buffer_size; ++i) {
         this->buffer.push(i);
@@ -161,7 +159,7 @@ TEST_F(CircularBufferFixedTest<int>, StressTest) {
 }
 
 // Extreme stress test with threads
-TEST_F(CircularBufferFixedTest<size_t>, ExtremeStressWithThreads) {
+TEST_F(CircularBufferFixedTest, ExtremeStressWithThreads) {
     constexpr size_t num_threads = 100;
     constexpr size_t buffer_size = 10000;
 
