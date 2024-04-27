@@ -37,8 +37,8 @@ namespace CircularBuffer {
                 emplace_back(std::forward<Args>(args)...);
             }// end void emplace(Args&&... args)
             //--------------------------
-            void pop(void) {
-                pop_front();
+            bool pop(void) {
+                return pop_front();
             }// end void pop(void)
             //--------------------------
             void top(void){
