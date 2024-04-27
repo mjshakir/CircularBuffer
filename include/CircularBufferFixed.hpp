@@ -8,14 +8,10 @@
 #include <atomic>
 #include <span>
 //--------------------------------------------------------------
-// User Defined Headers
-//--------------------------------------------------------------
-#include "CircularBufferBased.hpp"
-//--------------------------------------------------------------
 namespace CircularBuffer {
     //--------------------------------------------------------------
     template <typename T, size_t N>
-    class CircularBufferFixed : public CircularBufferBased<T> {
+    class CircularBufferFixed {
         //--------------------------------------------------------------
         public:
             //--------------------------------------------------------------
@@ -24,6 +20,47 @@ namespace CircularBuffer {
             }// end CircularBufferFixed(void)
             //--------------------------
             ~CircularBufferFixed(void) = default;
+            //--------------------------
+            void push(const T& item) {
+                push_back(item);
+            }// end void push(const T& item) 
+            //--------------------------
+            void push(T&& item) {
+                push_back(std::move(item));
+            }// end void push(T&& item)
+            //--------------------------
+            template <typename... Args>
+            void emplace(Args&&... args) {
+                emplace_back(std::forward<Args>(args)...);
+            }// end void emplace(Args&&... args)
+            //--------------------------
+            void pop(void) {
+                pop_front();
+            }// end void pop(void)
+            //--------------------------
+            void top(void){
+                return get_top();
+            }//end void top(void)
+            //--------------------------
+            std::optional<T> top_pop(void){
+                return get_top_pop();
+            }// end std::optional<T> pop(void)
+            //--------------------------
+            bool empty(void) const {   
+                return is_empty();
+            }// end bool empty(void) const
+            //--------------------------
+            size_t size(void) const {   
+                return get_size();
+            }// end size_t size(void) const
+            //--------------------------
+            void reset(void){
+                clear();
+            }// end void reset(void)
+            //--------------------------
+            std::optional<std::span<T>> span(void){
+                return get_span();
+            }// end std::optional<std::span<T>> span(void)
             //--------------------------
             typename std::array<T, N>::iterator begin(void) {
                 return m_buffer.begin();
