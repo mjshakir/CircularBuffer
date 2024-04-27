@@ -71,7 +71,6 @@ set(CIRCULARBUFFER_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 #------------------------------------------------------------------------------------------
 # Define the source files
 set(CIRCULARBUFFER_SOURCES
-    ${CIRCULARBUFFER_SOURCE_DIR}/CircularBufferBased.cpp
     ${CIRCULARBUFFER_SOURCE_DIR}/CircularBufferFixed.cpp
     ${CIRCULARBUFFER_SOURCE_DIR}/CircularBufferDynamic.cpp
     ${CIRCULARBUFFER_SOURCE_DIR}/CircularBuffer.cpp
