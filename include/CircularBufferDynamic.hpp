@@ -223,7 +223,7 @@ namespace CircularBuffer {
             //--------------------------------------------------------------
             const size_t m_max_size;
             std::deque<T> m_buffer;
-            std::mutex m_mutex;
+            mutable std::mutex m_mutex;
             //--------------------------------------------------------------
     };// end class CircularBufferDynamic
     //--------------------------------------------------------------
