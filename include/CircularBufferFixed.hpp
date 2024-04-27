@@ -34,8 +34,8 @@ namespace CircularBuffer {
                 emplace_back(std::forward<Args>(args)...);
             }// end void emplace(Args&&... args)
             //--------------------------
-            void pop(void) {
-                pop_front();
+            bool pop(void) {
+                return pop_front();
             }// end void pop(void)
             //--------------------------
             void top(void){
@@ -103,7 +103,7 @@ namespace CircularBuffer {
                 //--------------------------
                 if (m_count.load(std::memory_order_acquire) == N) {  // Queue is full
                     //--------------------------
-                    pop_front();  // Remove the oldest item to make space
+                    static_cast<void>(pop_front());  // Remove the oldest item to make space
                     //--------------------------
                 }//end if (size.load(std::memory_order_acquire) == N)
                 //--------------------------
@@ -121,7 +121,7 @@ namespace CircularBuffer {
                 //--------------------------
                 if (m_count.load(std::memory_order_acquire) == N) {  // Queue is full
                     //--------------------------
-                    pop_front();  // Remove the oldest item to make space
+                    static_cast<void>(pop_front());  // Remove the oldest item to make space
                     //--------------------------
                 }//end if (size.load(std::memory_order_acquire) == N)
                 //--------------------------
@@ -143,7 +143,7 @@ namespace CircularBuffer {
                     size_t next_tail = increment(current_tail);
                     //--------------------------
                     if (m_count.load(std::memory_order_acquire) == N) {  // Buffer is full
-                        pop_front();  // Attempt to clear space
+                        static_cast<void>(pop_front());  // Attempt to clear space
                     }// end if (size.load(std::memory_order_acquire) == N)
                     //--------------------------
                 } while (!m_tail.compare_exchange_weak(current_tail, next_tail, std::memory_order_release, std::memory_order_relaxed));
@@ -217,7 +217,9 @@ namespace CircularBuffer {
             void clear(void)  {
                 //--------------------------
                 while (!is_empty()) {
-                    pop_front();
+                    if(!pop_front()){
+                        break;
+                    }
                 }// end while (!is_empty())
                 //--------------------------
             }// end void clear(void)
