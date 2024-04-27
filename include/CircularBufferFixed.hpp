@@ -6,7 +6,6 @@
 #include <optional>
 #include <array>
 #include <atomic>
-#include <span>
 //--------------------------------------------------------------
 namespace CircularBuffer {
     //--------------------------------------------------------------
@@ -38,7 +37,7 @@ namespace CircularBuffer {
                 return pop_front();
             }// end void pop(void)
             //--------------------------
-            void top(void){
+            std::optional<T> top(void){
                 return get_top();
             }//end void top(void)
             //--------------------------
@@ -57,10 +56,6 @@ namespace CircularBuffer {
             void reset(void){
                 clear();
             }// end void reset(void)
-            //--------------------------
-            std::optional<std::span<T>> span(void){
-                return get_span();
-            }// end std::optional<std::span<T>> span(void)
             //--------------------------
             typename std::array<T, N>::iterator begin(void) {
                 return m_buffer.begin();
@@ -101,7 +96,7 @@ namespace CircularBuffer {
                 size_t current_tail = m_tail.load(std::memory_order_relaxed);
                 size_t next_tail = increment(current_tail);
                 //--------------------------
-                if (m_count.load(std::memory_order_acquire) == N) {  // Queue is full
+                if (is_full()) {  // Queue is full
                     //--------------------------
                     static_cast<void>(pop_front());  // Remove the oldest item to make space
                     //--------------------------
@@ -119,7 +114,7 @@ namespace CircularBuffer {
                 size_t current_tail = m_tail.load(std::memory_order_relaxed);
                 size_t next_tail = increment(current_tail);
                 //--------------------------
-                if (m_count.load(std::memory_order_acquire) == N) {  // Queue is full
+                if (is_full()) {  // Queue is full
                     //--------------------------
                     static_cast<void>(pop_front());  // Remove the oldest item to make space
                     //--------------------------
@@ -142,7 +137,7 @@ namespace CircularBuffer {
                     //--------------------------
                     size_t next_tail = increment(current_tail);
                     //--------------------------
-                    if (m_count.load(std::memory_order_acquire) == N) {  // Buffer is full
+                    if (is_full()) {  // Buffer is full
                         static_cast<void>(pop_front());  // Attempt to clear space
                     }// end if (size.load(std::memory_order_acquire) == N)
                     //--------------------------
@@ -156,28 +151,30 @@ namespace CircularBuffer {
             //--------------------------
             std::optional<T> get_top(void)  {
                 //--------------------------
-                std::atomic_thread_fence(std::memory_order_acquire);  // Ensure visibility of writes
+                if (is_empty()) {
+                    return std::nullopt;
+                }// end if (is_empty())
                 //--------------------------
-                size_t current_head = m_head.load(std::memory_order_relaxed), current_tail = m_tail.load(std::memory_order_relaxed);
+                size_t current_head = m_head.load(std::memory_order_acquire);
                 //--------------------------
-                if (current_head == current_tail or is_empty()) {
-                    return std::nullopt;  // Buffer is empty
-                }//end if (current_head == current_tail)
-                //--------------------------
-                return m_buffer.at(current_head);  // Return the element at head
+                return m_buffer[current_head];
                 //--------------------------
             }//end std::optional<T> get_top(void)
             //--------------------------
             std::optional<T> get_top_pop(void)  {
                 //--------------------------
-                size_t current_head = m_head.load(std::memory_order_relaxed), current_tail = m_tail.load(std::memory_order_relaxed);
+                if (is_empty()) {
+                    return std::nullopt;
+                }// end if (is_empty())
                 //--------------------------
-                if (current_head == current_tail or is_empty()) {
-                    return std::nullopt;  // Buffer is empty
-                }// end if (current_head == current_tail)
+                size_t current_head = m_head.load(std::memory_order_acquire);
                 //--------------------------
-                T value = m_buffer.at(current_head);  // Copy the element to return
-                m_head.store(increment(current_head), std::memory_order_release);  // Move head forward
+                T value = m_buffer[current_head];
+                //--------------------------
+                current_head = increment(current_head);
+                //--------------------------
+                m_head.store(current_head, std::memory_order_release);
+                m_count.fetch_sub(1, std::memory_order_relaxed); // Decrement count after pop
                 //--------------------------
                 return value;
                 //--------------------------
@@ -187,7 +184,7 @@ namespace CircularBuffer {
                 //--------------------------
                 size_t current_head = m_head.load(std::memory_order_relaxed);
                 //--------------------------
-                if (m_count.load(std::memory_order_acquire) == 0) {
+                if (is_empty()) {
                     return false;  // Buffer is empty, nothing to pop
                 }// end if (size.load(std::memory_order_acquire) == 0)
                 //--------------------------
@@ -208,6 +205,9 @@ namespace CircularBuffer {
                 //--------------------------
             }// end bool is_empty(void) const
             //--------------------------
+            bool is_full(void) const {
+                return m_count.load(std::memory_order_acquire) == N;
+            }// end bool is_full() const
             size_t get_size(void) const  {
                 //--------------------------
                 return m_count.load(std::memory_order_acquire);
@@ -223,22 +223,6 @@ namespace CircularBuffer {
                 }// end while (!is_empty())
                 //--------------------------
             }// end void clear(void)
-            //--------------------------
-            std::optional<std::span<T>> get_span(void)  {
-                //--------------------------
-                const size_t head   = m_head.load(std::memory_order_acquire);
-                const size_t tail   = m_tail.load(std::memory_order_acquire);
-                const size_t count  = m_count.load(std::memory_order_acquire);
-                //--------------------------
-                if (head <= tail) {
-                    return std::span<T>(m_buffer.data() + head, count);
-                }// end if (head <= tail)
-                //--------------------------
-                // Data wraps around, contiguous span is not possible
-                //--------------------------
-                return std::nullopt;
-                //--------------------------
-            }// end std::optional<std::span<T>> get_span()
             //--------------------------
             size_t increment(const size_t& value) const {
                 return (value + 1) % N;
