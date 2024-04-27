@@ -2,27 +2,29 @@
 #include <span>
 #include <thread>
 #include <chrono>
+#include <functional>
 
 #include "CircularBuffer.hpp"
 
 constexpr size_t performance_size = 1000000UL;
 
-template<typename T>
-void producer(CircularBuffer::CircularBuffer<T>& buffer) {
+template<typename BufferType>
+void producer(BufferType& buffer) {
     for (size_t i = 0; i < 10; ++i) {
-        buffer.push(static_cast<T>(i));  // Ensure correct type casting
+        buffer.push(i);  // Assumes BufferType has a push method
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
 
-template<typename T>
-void consumer(CircularBuffer::CircularBuffer<T>& buffer) {
+template<typename BufferType>
+void consumer(BufferType& buffer) {
     while (true) {
-        if (!buffer.empty()) {
-            auto item = buffer.top_pop();
+        if (!buffer.empty()) {  // Assumes BufferType has an empty method
+            auto item = buffer.top_pop();  // Assumes BufferType has a top_pop method
             if (item) {
                 std::cout << "Consumed: " << *item << std::endl;
-                if (*item == static_cast<T>(buffer.size())) break;  // Cast to T
+                if (*item == buffer.size())  // Assumes BufferType has a size method
+                    break;
             }
         }
     }
@@ -64,7 +66,7 @@ int main() {
         std::cout << std::endl;
     }
     {
-        CircularBuffer::CircularBuffer<int> buffer(10);  // Starts dynamic but with initial capacity
+        CircularBuffer::CircularBuffer<size_t> buffer(10);  // Starts dynamic but with initial capacity
 
         for (size_t i = 0; i < 15; ++i) {
             buffer.push(i);  // Automatically handles resizing if necessary
@@ -82,8 +84,17 @@ int main() {
     {
         CircularBuffer::CircularBuffer<size_t> buffer(10);
 
-        std::thread prod(producer<size_t>, std::ref(buffer));
-        std::thread cons(consumer<size_t>, std::ref(buffer));
+        std::thread prod(producer<decltype(buffer)>, std::ref(buffer));
+        std::thread cons(consumer<decltype(buffer)>, std::ref(buffer));
+
+        prod.join();
+        cons.join();
+    }
+    {
+        CircularBuffer::CircularBuffer<size_t, 10> buffer;
+
+        std::thread prod(producer<decltype(buffer)>, std::ref(buffer));
+        std::thread cons(consumer<decltype(buffer)>, std::ref(buffer));
 
         prod.join();
         cons.join();
