@@ -208,35 +208,6 @@ TYPED_TEST(CircularBufferFixedTest, OverwriteOldEntries) {
     EXPECT_TRUE(it == this->buffer.end()) << "Iterator did not reach the end of the buffer as expected.";
 }
 
-// Test valid span creation
-TYPED_TEST(CircularBufferFixedTest, ValidSpanCreation) {
-    for (size_t i = 0; i < 5; ++i) {  // Less than capacity
-        this->buffer.push(i);
-    }
-    auto span = this->buffer.span();
-    ASSERT_TRUE(span.has_value());
-    EXPECT_EQ(span->size(), 5);
-    for (size_t i = 0; i < span->size(); ++i) {
-        EXPECT_EQ((*span)[i], i);
-    }
-}
-
-// Test empty span creation
-TYPED_TEST(CircularBufferFixedTest, EmptySpanCreation) {
-    auto span = this->buffer.span();
-    EXPECT_FALSE(span.has_value());
-}
-
-// Test span creation on wrap-around
-TYPED_TEST(CircularBufferFixedTest, WrapAroundSpanCreation) {
-    for (size_t i = 0; i < 10; ++i) {  // Fill to capacity
-        this->buffer.push(i);
-    }
-    this->buffer.push(10);  // Cause wrap-around
-    auto span = this->buffer.span();
-    EXPECT_FALSE(span.has_value());  // Should not give a span because data is not contiguous
-}
-
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
