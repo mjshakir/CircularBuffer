@@ -22,7 +22,7 @@ namespace CircularBuffer {
             CircularBuffer(void) = delete;
             //--------------------------
             template <size_t M = N, std::enable_if_t<M != 0, int> = 0>
-            CircularBuffer(void) : CircularBufferFixed<T, N>>() {
+            CircularBuffer(void) : CircularBufferFixed<T, N>() {
                 //--------------------------
             }// end CircularBuffer(void)
             //--------------------------
