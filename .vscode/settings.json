@@ -50,6 +50,11 @@
         "vector": "cpp",
         "algorithm": "cpp",
         "span": "cpp",
-        "utility": "cpp"
+        "utility": "cpp",
+        "__tree": "cpp",
+        "iomanip": "cpp",
+        "map": "cpp",
+        "regex": "cpp",
+        "set": "cpp"
     }
 }
