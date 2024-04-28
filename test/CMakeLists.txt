@@ -27,3 +27,4 @@ endmacro()
 
 package_add_test(CircularBufferFixedTest CircularBufferFixedTest.cpp)
 package_add_test(CircularBufferDynamicTest CircularBufferDynamicTest.cpp)
+package_add_test(CircularBufferTest CircularBufferTest.cpp)
