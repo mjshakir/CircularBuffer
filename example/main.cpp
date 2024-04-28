@@ -64,10 +64,11 @@ int main() {
             buffer.push(i);  // Wrap around after 10
         }
 
-        std::cout << "Fixed Span Test" << std::endl;
+        std::cout << "Fixed Span Test: ";
         // Try to obtain a span from the buffer
-       printSpan<size_t>(buffer);
-
+        printSpan<size_t>(buffer);
+        
+        std::cout << "Fixed top_pop Test: ";
         while(!buffer.empty()) {
             auto value = buffer.top_pop();
             if(value.has_value()){
@@ -80,7 +81,7 @@ int main() {
     {
         CircularBuffer::CircularBuffer<size_t> buffer(10);  // Starts dynamic but with initial capacity
 
-        std::cout << "Dynamic Test" << std::endl;
+        std::cout << "Dynamic Test: ";
 
         for (size_t i = 0; i < 15; ++i) {
             buffer.push(i);  // Automatically handles resizing if necessary
@@ -94,7 +95,6 @@ int main() {
         }
 
         std::cout << std::endl;
-
 
     }
     {
