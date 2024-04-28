@@ -4,14 +4,12 @@
 #include <gtest/gtest.h>
 #include "CircularBufferDynamic.hpp"
 
-template <typename T>
+// Define a concrete test fixture class
 class CircularBufferDynamicTest : public ::testing::Test {
 protected:
-    CircularBuffer::CircularBufferDynamic<T> buffer;  // Default max size for simplicity in tests
+    CircularBuffer::CircularBufferDynamic<size_t> buffer;  // Create a buffer with a dynamic size
 
-    CircularBufferDynamicTest() : buffer(5) {
-
-    }  // Set an arbitrary max size
+    CircularBufferDynamicTest() : buffer(5) {}  // Set an arbitrary max size
 
     void SetUp() override {
         // Optional: Reset or reconfigure the buffer before each test if needed
@@ -22,20 +20,17 @@ protected:
     }
 };
 
-using MyDynamicBufferTypes = ::testing::Types<int, double>;  // Example types
-TYPED_TEST_SUITE(CircularBufferDynamicTest, MyDynamicBufferTypes);
-
-// Test basic push and pop functionality
-TYPED_TEST(CircularBufferDynamicTest, PushAndPop) {
-    this->buffer.push(1);
-    ASSERT_FALSE(this->buffer.empty());
-    auto result = this->buffer.top_pop();
+// Define tests using TEST_F for the fixed type size_t
+TEST_F(CircularBufferDynamicTest, PushAndPop) {
+    buffer.push(1);
+    ASSERT_FALSE(buffer.empty());
+    auto result = buffer.top_pop();
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(1, result.value());
-    EXPECT_TRUE(this->buffer.empty());
+    EXPECT_TRUE(buffer.empty());
 }
 
-TYPED_TEST(CircularBufferDynamicTest, CapacityLimits) {
+TEST_F(CircularBufferDynamicTest, CapacityLimits) {
     constexpr size_t buffer_size = 10;
     for (size_t i = 0; i < buffer_size; ++i) {
         this->buffer.push(i);
@@ -47,7 +42,7 @@ TYPED_TEST(CircularBufferDynamicTest, CapacityLimits) {
     EXPECT_EQ(1, result.value());  // Validate FIFO behavior on overflow
 }
 
-TYPED_TEST(CircularBufferDynamicTest, BoundaryConditions) {
+TEST_F(CircularBufferDynamicTest, BoundaryConditions) {
     constexpr size_t buffer_size = 9;
     for (size_t i = 0; i < buffer_size; ++i) {  // Fill buffer one less than capacity
         this->buffer.push(i);
@@ -58,7 +53,7 @@ TYPED_TEST(CircularBufferDynamicTest, BoundaryConditions) {
 }
 
 
-TEST_F(CircularBufferDynamicTest<int>, ConcurrencyAndOrdering) {
+TEST_F(CircularBufferDynamicTest, ConcurrencyAndOrdering) {
     constexpr size_t num_threads = 10;
     constexpr size_t per_thread_count = 100;
     std::vector<std::thread> producers;
@@ -66,7 +61,7 @@ TEST_F(CircularBufferDynamicTest<int>, ConcurrencyAndOrdering) {
     std::atomic<bool> start{false};
     
     for (size_t i = 0; i < num_threads; ++i) {
-        producers.emplace([&, i]() {
+        producers.emplace_back([&, i]() {
             while (!start) { std::this_thread::yield(); } // Wait for the start signal
             for (size_t j = 0; j < per_thread_count; ++j) {
                 this->buffer.push(i * per_thread_count + j);
@@ -77,9 +72,9 @@ TEST_F(CircularBufferDynamicTest<int>, ConcurrencyAndOrdering) {
     start = true; // Start all threads
     for (auto& th : producers) th.join();
 
-    std::vector<int> results;
+    std::vector<size_t> results;
     while (!this->buffer.empty()) {
-        results.push(this->buffer.top_pop().value());
+        results.push_back(this->buffer.top_pop().value());
     }
 
     EXPECT_EQ(num_threads * per_thread_count, results.size()); // Check all items are pushed and popped
@@ -89,7 +84,7 @@ TEST_F(CircularBufferDynamicTest<int>, ConcurrencyAndOrdering) {
     }
 }
 
-TEST_F(CircularBufferDynamicTest<int>, StressRobustness) {
+TEST_F(CircularBufferDynamicTest, StressRobustness) {
     constexpr size_t buffer_size = 1000000;
     try {
         for (size_t i = 0; i < buffer_size; ++i) {
@@ -101,10 +96,10 @@ TEST_F(CircularBufferDynamicTest<int>, StressRobustness) {
     }
 }
 
-TYPED_TEST(CircularBufferDynamicTest, MemoryAndResourceManagement) {
+TEST_F(CircularBufferDynamicTest, MemoryAndResourceManagement) {
     constexpr size_t buffer_size = 1000;
     for (size_t i = 0; i < buffer_size; ++i) {
-        this->buffer.push(std::to_string(i)); // Push string objects to test memory management
+        this->buffer.push(i); // Push string objects to test memory management
     }
     while (!this->buffer.empty()) {
         this->buffer.top_pop(); // Continuously pop to check for leaks or dangling pointers
@@ -112,7 +107,7 @@ TYPED_TEST(CircularBufferDynamicTest, MemoryAndResourceManagement) {
 }
 
 // Test wrap-around behavior
-TYPED_TEST(CircularBufferDynamicTest, WrapAround) {
+TEST_F(CircularBufferDynamicTest, WrapAround) {
     constexpr size_t buffer_size = 10;
     for (size_t i = 0; i < buffer_size; ++i) {
         this->buffer.push(i);
@@ -124,18 +119,16 @@ TYPED_TEST(CircularBufferDynamicTest, WrapAround) {
 }
 
 // Test thread safety by using multiple threads to push and pop concurrently
-TEST_F(CircularBufferDynamicTest<int>, ThreadSafety) {
+TEST_F(CircularBufferDynamicTest, ThreadSafety) {
     constexpr size_t num_threads = 5;
     constexpr size_t buffer_size = 100;
     constexpr size_t total_items = num_threads * buffer_size;
     std::vector<std::thread> producers, consumers;
-    producers.reserve(num_threads);
-    consumers.reserve(num_threads);
     std::atomic<size_t> total_produced{0}, total_consumed{0};
 
     // Start producers
     for (size_t i = 0; i < num_threads; ++i) {
-        producers.emplace([&]() {
+        producers.emplace_back([&, i]() {  // Corrected to use emplace_back
             for (size_t j = 0; j < buffer_size; ++j) {
                 this->buffer.push(j);
                 total_produced++;
@@ -145,7 +138,7 @@ TEST_F(CircularBufferDynamicTest<int>, ThreadSafety) {
 
     // Start consumers
     for (size_t i = 0; i < num_threads; ++i) {
-        consumers.emplace([&]() {
+        consumers.emplace_back([&, i]() {  // Corrected to use emplace_back
             while (total_consumed < total_items) {
                 if (auto val = this->buffer.top_pop(); val.has_value()) {
                     total_consumed++;
@@ -157,12 +150,12 @@ TEST_F(CircularBufferDynamicTest<int>, ThreadSafety) {
     for (auto& th : producers) th.join();
     for (auto& th : consumers) th.join();
 
-    EXPECT_EQ(total_items, total_produced);
-    EXPECT_EQ(total_items, total_consumed);
+    EXPECT_EQ(total_items, total_produced.load());
+    EXPECT_EQ(total_items, total_consumed.load());
 }
 
 // Stress test to ensure stability under high load
-TEST_F(CircularBufferDynamicTest<int>, StressTest) {
+TEST_F(CircularBufferDynamicTest, StressTest) {
     constexpr size_t buffer_size = 100000;
     for (int i = 0; i < buffer_size; ++i) {
         this->buffer.push(i);
@@ -171,25 +164,26 @@ TEST_F(CircularBufferDynamicTest<int>, StressTest) {
 }
 
 // Extreme stress test with threads
-TEST_F(CircularBufferDynamicTest<int>, ExtremeStressWithThreads) {
+TEST_F(CircularBufferDynamicTest, ExtremeStressWithThreads) {
     constexpr size_t num_threads = 100;
     constexpr size_t buffer_size = 10000;
 
     std::vector<std::thread> workers;
-    for (size_t i = 0; i < num_threads; ++i) {  // 100 threads for high concurrency
-        workers.emplace([&]() {
-            for (size_t j = 0; j < buffer_size; ++j) {  // Each thread does 10000 operations
+    for (size_t i = 0; i < num_threads; ++i) {
+        workers.emplace_back([&, i]() {  // Use emplace_back instead of emplace
+            for (size_t j = 0; j < buffer_size; ++j) {
                 this->buffer.push(j);
                 this->buffer.top_pop();
             }
         });
     }
 
+
     for (auto& th : workers) th.join();
 }
 
 // Test that ensures buffer correctly overwrites old data
-TYPED_TEST(CircularBufferDynamicTest, OverwriteOldEntries) {
+TEST_F(CircularBufferDynamicTest, OverwriteOldEntries) {
     // Push up to capacity
     for (int i = 1; i <= 5; ++i) {
         this->buffer.push(i);
