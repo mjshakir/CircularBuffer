@@ -46,44 +46,35 @@ TEST_F(CircularBufferFixedTest, BoundaryConditions) {
 TEST_F(CircularBufferFixedTest, ConcurrencyAndOrdering) {
     constexpr size_t num_threads = 2;
     constexpr size_t per_thread_count = 10;
-    constexpr size_t buffer_capacity = BUFFER_SIZE; // Assuming the buffer capacity is 5
+    constexpr size_t buffer_capacity = BUFFER_SIZE; // Assuming BUFFER_SIZE is 5
     std::vector<std::thread> producers;
     std::vector<size_t> pushed_elements(num_threads * per_thread_count);
     producers.reserve(num_threads);
-    std::atomic<bool> start{false};
+    {
+        for (size_t i = 0; i < num_threads; ++i) {
+            producers.emplace_back([&, i]() {
+                for (size_t j = 0; j < per_thread_count; ++j) {
+                    size_t element = i * per_thread_count + j;
+                    this->buffer.push(element);
+                    pushed_elements[i * per_thread_count + j] = element;
+                }
+            });
+        }
 
-    for (size_t i = 0; i < num_threads; ++i) {
-        producers.emplace_back([&, i]() {
-            while (!start) { std::this_thread::yield(); } // Wait for the start signal
-            for (size_t j = 0; j < per_thread_count; ++j) {
-                size_t element = i * per_thread_count + j;
-                this->buffer.push(element);
-                pushed_elements[i * per_thread_count + j] = element;
-            }
-        });
+        for (auto& th : producers) {
+            th.join();
+        }
     }
-
-    // Delay to ensure all threads are ready
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    start = true; // Start all threads
-
-    for (auto& th : producers) {
-        th.join();
-    }
-
-    // Since the buffer is a circular buffer, the expected contents at the end should be the last 'buffer_capacity' elements pushed
-    size_t expected_start_index = num_threads * per_thread_count - buffer_capacity;
-
     std::vector<size_t> final_elements;
     final_elements.reserve(buffer_capacity);
     while (!this->buffer.empty()) {
         final_elements.push_back(this->buffer.top_pop().value());
     }
 
-    // Verify that the contents of the buffer are the last 'buffer_capacity' elements pushed
     ASSERT_EQ(final_elements.size(), buffer_capacity);
     for (size_t i = 0; i < buffer_capacity; ++i) {
-        EXPECT_EQ(final_elements[i], pushed_elements[expected_start_index + i]);
+        size_t expected_value = pushed_elements[pushed_elements.size() - buffer_capacity + i];
+        EXPECT_EQ(final_elements.at(i), expected_value) << "Mismatch at buffer index " << i;
     }
 }
 
