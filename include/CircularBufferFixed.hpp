@@ -206,18 +206,29 @@ namespace CircularBuffer {
             //--------------------------
             bool pop_front(void)  {
                 //--------------------------
-                size_t current_head = m_head.load(std::memory_order_relaxed);
+                size_t current_head, next_head;
                 //--------------------------
-                if (is_empty()) {
-                    return false;  // Buffer is empty, nothing to pop
-                }// end if (size.load(std::memory_order_acquire) == 0)
+                do {
+                    //--------------------------
+                    current_head = m_head.load(std::memory_order_acquire);
+                    //--------------------------
+                    if (is_empty()) {
+                        return false; // Buffer is empty, nothing to pop
+                    }// end if (is_empty())
+                    //--------------------------
+                    next_head = increment(current_head);
+                    //--------------------------
+                } while (!m_head.compare_exchange_weak(current_head, next_head,
+                                                    std::memory_order_release,
+                                                    std::memory_order_relaxed));
                 //--------------------------
-                size_t next_head = increment(current_head);
+                // Destroy the object at the old head, if it's a non-trivial type
                 //--------------------------
-                m_buffer[current_head].~T();  // Call destructor
+                m_buffer[current_head].~T();
                 //--------------------------
-                m_head.store(next_head, std::memory_order_release);
-                m_count.fetch_sub(1, std::memory_order_release);
+                // Decrement the count of elements
+                //--------------------------
+                m_count.fetch_sub(1, std::memory_order_acq_rel); // Using acq_rel for decrement to ensure total order with increment operations
                 //--------------------------
                 return true;
                 //--------------------------
