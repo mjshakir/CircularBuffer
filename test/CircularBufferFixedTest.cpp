@@ -73,7 +73,7 @@ TEST_F(CircularBufferFixedTest, ConcurrencyAndOrdering) {
 
     ASSERT_EQ(final_elements.size(), buffer_capacity);
     for (size_t i = 0; i < buffer_capacity; ++i) {
-        size_t expected_value = pushed_elements[pushed_elements.size() - buffer_capacity + i];
+        size_t expected_value = pushed_elements.at(pushed_elements.size() - buffer_capacity + i);
         EXPECT_EQ(final_elements.at(i), expected_value) << "Mismatch at buffer index " << i;
     }
 }
@@ -151,8 +151,7 @@ TEST_F(CircularBufferFixedTest, ExtremeStressWithThreads) {
     EXPECT_LE(total_pops.load(), total_pushes.load()); // Pops should be less or equal to pushes
 
     // The buffer should either be full or have fewer items depending on the last operation's timing
-    size_t current_size = this->buffer.size();
-    EXPECT_LE(current_size, buffer_capacity);  // Check if buffer size is within its capacity
+    EXPECT_LE(this->buffer.size(), buffer_capacity);  // Check if buffer size is within its capacity
 
     // Clear the buffer and check
     std::vector<size_t> remaining_elements;
