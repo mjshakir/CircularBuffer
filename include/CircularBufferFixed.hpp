@@ -6,6 +6,7 @@
 #include <optional>
 #include <array>
 #include <atomic>
+#include <thread>
 //--------------------------------------------------------------
 namespace CircularBuffer {
     //--------------------------------------------------------------
@@ -93,14 +94,23 @@ namespace CircularBuffer {
             //--------------------------------------------------------------
             void push_back(const T& item)  {
                 //--------------------------
-                size_t current_tail = m_tail.load(std::memory_order_relaxed);
-                size_t next_tail = increment(current_tail);
+                size_t current_tail{0}, next_tail{0};
                 //--------------------------
-                if (is_full()) {  // Queue is full
+                do {
+                    current_tail = m_tail.load(std::memory_order_relaxed);
                     //--------------------------
-                    static_cast<void>(pop_front());  // Remove the oldest item to make space
+                    next_tail = increment(current_tail);
                     //--------------------------
-                }//end if (size.load(std::memory_order_acquire) == N)
+                    if (is_full()) {  // Buffer is full
+                        static_cast<void>(pop_front());  // Attempt to clear space
+                    }// end if (is_full())
+                    //--------------------------
+                    if (next_tail == m_head.load(std::memory_order_acquire)) {
+                        std::this_thread::yield(); // buffer full, yield before retrying
+                        continue;
+                    }// end if (next_tail == m_head.load(std::memory_order_acquire))
+                    //--------------------------
+                } while (!m_tail.compare_exchange_weak(current_tail, next_tail, std::memory_order_release, std::memory_order_relaxed));
                 //--------------------------
                 m_buffer[current_tail] = item;
                 //--------------------------
@@ -111,14 +121,23 @@ namespace CircularBuffer {
             //--------------------------
             void push_back(T&& item)  {
                 //--------------------------
-                size_t current_tail = m_tail.load(std::memory_order_relaxed);
-                size_t next_tail = increment(current_tail);
+                size_t current_tail{0}, next_tail{0};
                 //--------------------------
-                if (is_full()) {  // Queue is full
+                do {
+                    current_tail = m_tail.load(std::memory_order_relaxed);
                     //--------------------------
-                    static_cast<void>(pop_front());  // Remove the oldest item to make space
+                    next_tail = increment(current_tail);
                     //--------------------------
-                }//end if (size.load(std::memory_order_acquire) == N)
+                    if (is_full()) {  // Buffer is full
+                        static_cast<void>(pop_front());  // Attempt to clear space
+                    }// end if (is_full())
+                    //--------------------------
+                    if (next_tail == m_head.load(std::memory_order_acquire)) {
+                        std::this_thread::yield(); // buffer full, yield before retrying
+                        continue;
+                    }//end if (next_tail == m_head.load(std::memory_order_acquire))
+                    //--------------------------
+                } while (!m_tail.compare_exchange_weak(current_tail, next_tail, std::memory_order_release, std::memory_order_relaxed));
                 //--------------------------
                 m_buffer[current_tail] = std::move(item);
                 //--------------------------
@@ -133,13 +152,18 @@ namespace CircularBuffer {
                 size_t current_tail{0}, next_tail{0};
                 //--------------------------
                 do {
-                    size_t current_tail = m_tail.load(std::memory_order_relaxed);
+                    current_tail = m_tail.load(std::memory_order_relaxed);
                     //--------------------------
-                    size_t next_tail = increment(current_tail);
+                    next_tail = increment(current_tail);
                     //--------------------------
                     if (is_full()) {  // Buffer is full
                         static_cast<void>(pop_front());  // Attempt to clear space
-                    }// end if (size.load(std::memory_order_acquire) == N)
+                    }// end if (is_full())
+                    //--------------------------
+                    if (next_tail == m_head.load(std::memory_order_acquire)) {
+                        std::this_thread::yield(); // buffer full, yield before retrying
+                        continue;
+                    }//end if (next_tail == m_head.load(std::memory_order_acquire))
                     //--------------------------
                 } while (!m_tail.compare_exchange_weak(current_tail, next_tail, std::memory_order_release, std::memory_order_relaxed));
                 //--------------------------
@@ -230,9 +254,9 @@ namespace CircularBuffer {
             //--------------------------------------------------------------
         private:
             //--------------------------------------------------------------
-            std::atomic<size_t> m_head{0}, m_tail{0}, m_count{0};
+            std::atomic<size_t> m_head, m_tail, m_count;
             std::array<T, N> m_buffer;
         //--------------------------------------------------------------
-    };//end class CircularBufferFixed : protected CircularBufferBased
+    };//end class CircularBufferFixed
     //--------------------------------------------------------------
 }// end namespace CircularBuffer
