@@ -1,6 +1,8 @@
 #include <thread>
 #include <vector>
 #include <atomic>
+#include <mutex>
+#include <unordered_set>
 #include <gtest/gtest.h>
 #include "CircularBufferDynamic.hpp"
 
@@ -14,11 +16,10 @@ protected:
     CircularBufferDynamicTest() : buffer(BUFFER_SIZE) {}  // Set an arbitrary max size
 
     void SetUp() override {
-        // Optional: Reset or reconfigure the buffer before each test if needed
+        buffer.reset(); // Clear buffer before each test
     }
 
     void TearDown() override {
-        // Optional: Clean up resources or check invariants after each test if needed
     }
 };
 
@@ -89,6 +90,67 @@ TEST_F(CircularBufferDynamicTest, BoundaryConditions) {
 //         EXPECT_EQ(final_elements.at(i), expected_value) << "Mismatch at buffer index " << i;
 //     }
 // }
+
+TEST_F(CircularBufferDynamicTest, MultipleProducersMultipleConsumers) {
+    constexpr size_t numProducers = BUFFER_SIZE;
+    constexpr size_t numConsumers = BUFFER_SIZE;
+    constexpr size_t numOperations = 1000UL;
+    std::vector<std::thread> producers;
+    std::vector<std::thread> consumers;
+    std::atomic<bool> productionDone(false);
+    std::atomic<size_t> producedCount(0);
+    std::atomic<size_t> consumedCount(0);
+    std::mutex consumedValuesMutex;
+    std::unordered_set<size_t> consumedValues;
+
+    producers.reserve(numProducers);
+    consumers.reserve(numConsumers);
+    consumedValues.reserve(numProducers * numOperations);
+
+    auto producerFunc = [&](size_t producerId) {
+        for (size_t i = 0; i < numOperations; ++i) {
+            size_t value = producerId * numOperations + i;
+            buffer.push(value);
+            producedCount++;
+        }
+    };
+
+    auto consumerFunc = [&]() {
+        while (!productionDone || !buffer.empty()) {
+            auto value = buffer.top_pop();
+            if (value.has_value()) {
+                std::lock_guard<std::mutex> lock(consumedValuesMutex);
+                consumedValues.insert(value.value());
+                consumedCount++;
+            }
+        }
+    };
+
+    // Start producers
+    for (size_t i = 0; i < numProducers; ++i) {
+        producers.emplace_back(producerFunc, i);
+    }
+
+    // Start consumers
+    for (size_t i = 0; i < numConsumers; ++i) {
+        consumers.emplace_back(consumerFunc);
+    }
+
+    // Wait for all producers to finish
+    for (auto& producer : producers) {
+        producer.join();
+    }
+    productionDone = true;  // Indicate production completion
+
+    // Wait for all consumers to finish
+    for (auto& consumer : consumers) {
+        consumer.join();
+    }
+
+    // Check that all consumed items were unique and verify counts
+    EXPECT_EQ(consumedValues.size(), consumedCount);
+    EXPECT_LE(consumedValues.size(), producedCount);
+}
 
 TEST_F(CircularBufferDynamicTest, StressRobustness) {
     constexpr size_t buffer_size = 1000000;

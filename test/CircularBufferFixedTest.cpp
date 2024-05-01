@@ -1,6 +1,8 @@
 #include <thread>
 #include <vector>
 #include <atomic>
+#include <mutex>
+#include <algorithm>
 #include <gtest/gtest.h>
 #include "CircularBufferFixed.hpp"
 
@@ -9,6 +11,10 @@ constexpr size_t BUFFER_SIZE = 5;
 class CircularBufferFixedTest : public ::testing::Test {
 protected:
     CircularBuffer::CircularBufferFixed<size_t, BUFFER_SIZE> buffer;  // Fixed size buffer
+
+    void SetUp(void) override {
+        buffer.reset(); // Clear buffer before each test
+    }
 };
 
 // Test basic push and pop functionality
@@ -77,6 +83,47 @@ TEST_F(CircularBufferFixedTest, BoundaryConditions) {
 //         EXPECT_EQ(final_elements.at(i), expected_value) << "Mismatch at buffer index " << i;
 //     }
 // }
+
+TEST_F(CircularBufferFixedTest, MultipleProducersMultipleConsumers) {
+    constexpr size_t num_producers = BUFFER_SIZE;
+    constexpr size_t num_consumers = BUFFER_SIZE;
+    constexpr size_t num_operations = 10000UL;
+    std::vector<std::thread> producers;
+    std::vector<std::thread> consumers;
+    producers.reserve(num_producers);
+    consumers.reserve(num_consumers);
+    std::atomic<size_t> consumed_count(0);
+    std::mutex print_mutex;
+
+    for (size_t i = 0; i < num_producers; ++i) {
+        producers.emplace_back([&, i]() {
+            for (size_t j = 0; j < num_operations; ++j) {
+                buffer.push(i * num_operations + j);
+            }
+        });
+    }
+
+    for (size_t i = 0; i < num_consumers; ++i) {
+        consumers.emplace_back([&]() {
+            while (consumed_count < num_producers * num_operations) {
+                auto val = buffer.top_pop();
+                if (val.has_value()) {
+                    size_t local_count = ++consumed_count;
+                    std::lock_guard<std::mutex> lock(print_mutex);
+                }
+            }
+        });
+    }
+
+    for (auto& producer : producers) {
+        producer.join();
+    }
+    for (auto& consumer : consumers) {
+        consumer.join();
+    }
+
+    EXPECT_EQ(consumed_count, num_producers * num_operations);
+}
 
 TEST_F(CircularBufferFixedTest, StressRobustness) {
     constexpr size_t buffer_size = 1000000;
