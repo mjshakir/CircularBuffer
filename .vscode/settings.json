@@ -55,6 +55,9 @@
         "iomanip": "cpp",
         "map": "cpp",
         "regex": "cpp",
-        "set": "cpp"
+        "set": "cpp",
+        "barrier": "cpp",
+        "any": "cpp",
+        "condition_variable": "cpp"
     }
 }
