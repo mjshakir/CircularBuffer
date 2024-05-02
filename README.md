@@ -111,10 +111,14 @@ int main() {
         cb.push(i);
     }
 
-    while (!cb.empty()) {
-        std::cout << cb.front() << std::endl;
-        cb.pop();
+    while(!cb.empty()) {
+        auto value = cb.top_pop();
+        if(value.has_value()){
+            std::cout << value.value() << " ";
+        }
     }
+
+    std::cout << std::endl;
 
     return 0;
 }
