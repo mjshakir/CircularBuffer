@@ -41,11 +41,11 @@ To build the `CircularBuffer` project, you can use the following commands:
 
 2. Create a build directory and generate build system files.
     ```bash
-    mkdir build; cd build
+    cmake -DFORCE_COLORED_OUTPUT=ON -DCMAKE_BUILD_TYPE=Release -B build
     ```
 
     ```bash
-    cmake -DFORCE_COLORED_OUTPUT=ON -DCMAKE_BUILD_TYPE=Release ..
+    cd build
     ```
 
 3. Build the library.
@@ -108,12 +108,12 @@ Here's a simple example of how to use the `CircularBuffer`:
 int main() {
     CircularBuffer::CircularBuffer<int, 5> cb;  // Fixed-size circular buffer
     for (int i = 0; i < 5; ++i) {
-        cb.push_back(i);
+        cb.push(i);
     }
 
     while (!cb.empty()) {
         std::cout << cb.front() << std::endl;
-        cb.pop_front();
+        cb.pop();
     }
 
     return 0;
