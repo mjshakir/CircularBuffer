@@ -7,10 +7,9 @@ if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 endif()
 #------------------------------------------------------------------------------------------
 # Get the name of the folder and use it as the project name
-get_filename_component(FOLDER_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
-set(CIRCULARBUFFER_PROJECT_NAME "${FOLDER_NAME}_circularbuffer" CACHE STRING "CircularBuffer project name")
-#------------------------------------------------------------------------------------------
-project(${CIRCULARBUFFER_PROJECT_NAME} VERSION 1.0.0 LANGUAGES CXX)
+get_filename_component(PARENT_DIR_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
+string(REPLACE " " "_" PARENT_DIR_NAME ${PARENT_DIR_NAME})
+project(${PARENT_DIR_NAME} VERSION 1.0 DESCRIPTION "A timing function library" LANGUAGES CXX)
 #------------------------------------------------------------------------------------------
 # Set the C++ standard
 set(CMAKE_CXX_STANDARD 20)
@@ -77,69 +76,69 @@ set(CIRCULARBUFFER_SOURCES
 )
 #------------------------------------------------------------------------------------------
 # Define the CircularBuffer library target
-set(CIRCULARBUFFER_LIBRARY_NAME "${CIRCULARBUFFER_PROJECT_NAME}_lib")
+#set(CIRCULARBUFFER_LIBRARY_NAME "${CIRCULARBUFFER_PROJECT_NAME}_lib")
 # Check if the library should be built as a shared library
 if(BUILD_CIRCULARBUFFER_SHARED_LIBS)
-    add_library(${CIRCULARBUFFER_LIBRARY_NAME} SHARED ${CIRCULARBUFFER_SOURCES})
+    add_library(${PROJECT_NAME} SHARED ${CIRCULARBUFFER_SOURCES})
     # If needed, set properties specific to shared libraries here
 else()
-    add_library(${CIRCULARBUFFER_LIBRARY_NAME} STATIC ${CIRCULARBUFFER_SOURCES})
+    add_library(${PROJECT_NAME} STATIC ${CIRCULARBUFFER_SOURCES})
     # If needed, set properties specific to static libraries here
 endif()
 #------------------------------------------------------------------------------------------
-target_include_directories(${CIRCULARBUFFER_LIBRARY_NAME} PUBLIC 
+target_include_directories(${PROJECT_NAME} PUBLIC 
     $<BUILD_INTERFACE:${CIRCULARBUFFER_INCLUDE_DIR}>
     $<INSTALL_INTERFACE:include>
 )
 #------------------------------------------------------------------------------------------
 # Alias for CircularBuffer library
-add_library(CircularBuffer::circularbuffer ALIAS ${CIRCULARBUFFER_LIBRARY_NAME})
+add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 #------------------------------------------------------------------------------------------
 # Set CIRCULARBUFFER_LIBRARIES variable
 if(CIRCULARBUFFER_STANDALONE_PROJECT)
-    set(CIRCULARBUFFER_LIBRARIES CircularBuffer::circularbuffer)
+    set(CIRCULARBUFFER_LIBRARIES ${PROJECT_NAME}::${PROJECT_NAME})
 else()
-    set(CIRCULARBUFFER_LIBRARIES CircularBuffer::circularbuffer PARENT_SCOPE)
+    set(CIRCULARBUFFER_LIBRARIES ${PROJECT_NAME}::${PROJECT_NAME} PARENT_SCOPE)
 endif()
 message(STATUS "CIRCULARBUFFER_LIBRARIES: ${CIRCULARBUFFER_LIBRARIES}")
 #------------------------------------------------------------------------------------------
 # Building examples
 if(BUILD_CIRCULARBUFFER_EXAMPLE)
-    set(CIRCULARBUFFER_EXAMPLE_NAME "${CIRCULARBUFFER_PROJECT_NAME}_example")
+    set(CIRCULARBUFFER_EXAMPLE_NAME "${PROJECT_NAME}_example")
     add_executable(${CIRCULARBUFFER_EXAMPLE_NAME} example/main.cpp)
-    target_link_libraries(${CIRCULARBUFFER_EXAMPLE_NAME} PRIVATE ${CIRCULARBUFFER_LIBRARY_NAME})
+    target_link_libraries(${CIRCULARBUFFER_EXAMPLE_NAME} PRIVATE ${PROJECT_NAME})
 endif()
 #------------------------------------------------------------------------------------------
 # Compiler-specific flags
 if(MSVC)
     set(CMAKE_CXX_FLAGS_RELEASE "/O2 /MD")
     set(CMAKE_CXX_FLAGS_DEBUG "/Od /MDd")
-    target_compile_options(${CIRCULARBUFFER_LIBRARY_NAME} PRIVATE 
+    target_compile_options(${PROJECT_NAME} PRIVATE 
         "$<$<CONFIG:Release>:/O2>" 
         "$<$<CONFIG:Debug>:/Od>" 
         "$<$<CONFIG:Debug>:/Zi>"
     )
     if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        target_link_options(${CIRCULARBUFFER_LIBRARY_NAME} PRIVATE /DEBUG)
+        target_link_options(${PROJECT_NAME} PRIVATE /DEBUG)
     endif()
 
-    set_target_properties(${CIRCULARBUFFER_LIBRARY_NAME} PROPERTIES
+    set_target_properties(${PROJECT_NAME} PROPERTIES
         WINDOWS_EXPORT_ALL_SYMBOLS TRUE
     )
 else()
     # For non-MSVC compilers
-    target_compile_options(${CIRCULARBUFFER_LIBRARY_NAME} PRIVATE 
+    target_compile_options(${PROJECT_NAME} PRIVATE 
         "$<$<CONFIG:Release>:-O3>"
     )
     # Conditionally include AddressSanitizer flags only if standalone and in Debug mode
     if(CIRCULARBUFFER_STANDALONE_PROJECT AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang|GNU")
         set(SANITIZE_FLAGS "$<$<CONFIG:Debug>:-fsanitize=address>")
-        target_compile_options(${CIRCULARBUFFER_LIBRARY_NAME} PRIVATE 
+        target_compile_options(${PROJECT_NAME} PRIVATE 
             "$<$<CONFIG:Debug>:-g>"
             "$<$<CONFIG:Debug>:-O0>"
             ${SANITIZE_FLAGS}
         )
-        target_link_options(${CIRCULARBUFFER_LIBRARY_NAME} PRIVATE ${SANITIZE_FLAGS})
+        target_link_options(${PROJECT_NAME} PRIVATE ${SANITIZE_FLAGS})
     endif()
 endif()
 #------------------------------------------------------------------------------------------
@@ -153,7 +152,7 @@ endif()
 # Export the library targets (only if it's a standalone project)
 if(CIRCULARBUFFER_STANDALONE_PROJECT)
     include(GNUInstallDirs)
-    install(TARGETS ${CIRCULARBUFFER_LIBRARY_NAME} EXPORT CircularBufferTargets
+    install(TARGETS ${PROJECT_NAME} EXPORT CircularBufferTargets
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
