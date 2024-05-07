@@ -18,11 +18,11 @@ endif()
 
 macro(package_add_test TESTNAME)
     add_executable(${TESTNAME} ${ARGN})
-    target_link_libraries(${TESTNAME} GTest::GTest GTest::Main ${CIRCULARBUFFER_LIBRARY_NAME})
+    target_link_libraries(${TESTNAME} GTest::GTest GTest::Main ${PROJECT_NAME})
     add_test(NAME ${TESTNAME} COMMAND ${TESTNAME})
     set_target_properties(${TESTNAME} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/testBin)
-    add_dependencies(${TESTNAME} ${CIRCULARBUFFER_LIBRARY_NAME})
+    add_dependencies(${TESTNAME} ${PROJECT_NAME})
 endmacro()
 
 package_add_test(CircularBufferFixedTest CircularBufferFixedTest.cpp)
