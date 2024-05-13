@@ -33,7 +33,6 @@ if(CIRCULARBUFFER_STANDALONE_PROJECT)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-    # message(STATUS "Library output directory: ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
     # Optionally, to set these directories only for specific build configurations (Debug, Release, etc.),
     # you can use the following approach:
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin)
@@ -42,7 +41,6 @@ if(CIRCULARBUFFER_STANDALONE_PROJECT)
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/lib)
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/lib)
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/lib)
-    message(STATUS "Library output directory: ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
     # Diagnostic output
     message(STATUS "ARCHIVE_OUTPUT_DIRECTORY: ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
     message(STATUS "LIBRARY_OUTPUT_DIRECTORY: ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
@@ -75,8 +73,6 @@ set(CIRCULARBUFFER_SOURCES
     ${CIRCULARBUFFER_SOURCE_DIR}/CircularBuffer.cpp
 )
 #------------------------------------------------------------------------------------------
-# Define the CircularBuffer library target
-#set(CIRCULARBUFFER_LIBRARY_NAME "${CIRCULARBUFFER_PROJECT_NAME}_lib")
 # Check if the library should be built as a shared library
 if(BUILD_CIRCULARBUFFER_SHARED_LIBS)
     add_library(${PROJECT_NAME} SHARED ${CIRCULARBUFFER_SOURCES})
@@ -144,6 +140,8 @@ endif()
 #------------------------------------------------------------------------------------------
 # Enable testing and add the test directory if this is a standalone project
 if(BUILD_CIRCULARBUFFER_TESTS AND CIRCULARBUFFER_STANDALONE_PROJECT)
+    find_package(GTest QUIET)
+    enable_testing()
     add_subdirectory(test)
 endif()
 #------------------------------------------------------------------------------------------
