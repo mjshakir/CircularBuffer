@@ -1,3 +1,6 @@
+# Ensure GTest is not already found before fetching
+find_package(GTest QUIET)
+
 # If not found, fetch it from the repository
 if(NOT GTest_FOUND)
     include(FetchContent)
@@ -15,6 +18,8 @@ if(NOT GTest_FOUND)
     add_library(GTest::GTest ALIAS gtest)
     add_library(GTest::Main ALIAS gtest_main)
 endif()
+
+enable_testing()
 
 macro(package_add_test TESTNAME)
     add_executable(${TESTNAME} ${ARGN})
