@@ -144,8 +144,6 @@ endif()
 #------------------------------------------------------------------------------------------
 # Enable testing and add the test directory if this is a standalone project
 if(BUILD_CIRCULARBUFFER_TESTS AND CIRCULARBUFFER_STANDALONE_PROJECT)
-    find_package(GTest QUIET)
-    enable_testing()
     add_subdirectory(test)
 endif()
 #------------------------------------------------------------------------------------------
@@ -159,12 +157,12 @@ if(CIRCULARBUFFER_STANDALONE_PROJECT)
         INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
 
-    install(DIRECTORY ${CIRCULARBUFFER_INCLUDE_DIR}/${CIRCULARBUFFER_PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    install(DIRECTORY ${CIRCULARBUFFER_INCLUDE_DIR}/${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
     install(EXPORT CircularBufferTargets
         FILE CircularBufferTargets.cmake
-        NAMESPACE CircularBuffer::
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${CIRCULARBUFFER_PROJECT_NAME}
+        NAMESPACE ${PROJECT_NAME}::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
     )
 endif()
 #------------------------------------------------------------------------------------------
