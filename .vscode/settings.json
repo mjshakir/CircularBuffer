@@ -58,6 +58,7 @@
         "set": "cpp",
         "barrier": "cpp",
         "any": "cpp",
-        "condition_variable": "cpp"
+        "condition_variable": "cpp",
+        "unordered_set": "cpp"
     }
 }
