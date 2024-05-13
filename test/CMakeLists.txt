@@ -1,6 +1,3 @@
-# Ensure GTest is not already found before fetching
-find_package(GTest QUIET)
-
 # If not found, fetch it from the repository
 if(NOT GTest_FOUND)
     include(FetchContent)
@@ -19,14 +16,15 @@ if(NOT GTest_FOUND)
     add_library(GTest::Main ALIAS gtest_main)
 endif()
 
-enable_testing()
-
 macro(package_add_test TESTNAME)
     add_executable(${TESTNAME} ${ARGN})
     target_link_libraries(${TESTNAME} GTest::GTest GTest::Main ${PROJECT_NAME})
     add_test(NAME ${TESTNAME} COMMAND ${TESTNAME})
     set_target_properties(${TESTNAME} PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/testBin)
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/testBin
+        ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/testlib
+        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/testlib
+    )
     add_dependencies(${TESTNAME} ${PROJECT_NAME})
 endmacro()
 
