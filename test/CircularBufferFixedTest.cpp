@@ -162,54 +162,54 @@ TEST(CircularBufferFixedTest, WrapAround) {
 }
 
 // Test thread safety by using multiple threads to push and pop concurrently
-// TEST(CircularBufferFixedTest, ExtremeStressWithThreads) {
-//     CircularBuffer::CircularBufferFixed<size_t, BUFFER_SIZE> buffer;
+TEST(CircularBufferFixedTest, ExtremeStressWithThreads) {
+    CircularBuffer::CircularBufferFixed<size_t, BUFFER_SIZE> buffer;
 
-//     constexpr size_t num_threads = 100;
-//     constexpr size_t operations_per_thread = 10000;  // Each thread does 5000 pushes and 5000 pops
-//     constexpr size_t buffer_capacity = BUFFER_SIZE;  // Fixed buffer size
+    constexpr size_t num_threads = 100;
+    constexpr size_t operations_per_thread = 10000;  // Each thread does 5000 pushes and 5000 pops
+    constexpr size_t buffer_capacity = BUFFER_SIZE;  // Fixed buffer size
 
-//     std::vector<std::thread> workers;
-//     workers.reserve(num_threads);
-//     std::atomic<size_t> total_pops{0};
-//     std::atomic<size_t> total_pushes{0};
+    std::vector<std::thread> workers;
+    workers.reserve(num_threads);
+    std::atomic<size_t> total_pops{0};
+    std::atomic<size_t> total_pushes{0};
 
-//     // Launch threads to simultaneously push to and pop from the buffer
-//     for (size_t i = 0; i < num_threads; ++i) {
-//         workers.emplace_back([&, i]() {
-//             for (size_t j = 0; j < operations_per_thread / 2; ++j) {
-//                 // Push and immediately try to pop
-//                 buffer.push(i * operations_per_thread + j);
-//                 total_pushes++;
-//                 if (buffer.top_pop().has_value()) {
-//                     total_pops++;
-//                 }
-//             }
-//         });
-//     }
+    // Launch threads to simultaneously push to and pop from the buffer
+    for (size_t i = 0; i < num_threads; ++i) {
+        workers.emplace_back([&, i]() {
+            for (size_t j = 0; j < operations_per_thread / 2; ++j) {
+                // Push and immediately try to pop
+                buffer.push(i * operations_per_thread + j);
+                total_pushes++;
+                if (buffer.top_pop().has_value()) {
+                    total_pops++;
+                }
+            }
+        });
+    }
 
-//     for (auto& th : workers) {
-//         th.join();
-//     }
+    for (auto& th : workers) {
+        th.join();
+    }
 
-//     // After all operations, check pops and pushes
-//     EXPECT_EQ(total_pushes.load(), num_threads * (operations_per_thread / 2));
-//     EXPECT_LE(total_pops.load(), total_pushes.load()); // Pops should be less or equal to pushes
+    // After all operations, check pops and pushes
+    EXPECT_EQ(total_pushes.load(), num_threads * (operations_per_thread / 2));
+    EXPECT_LE(total_pops.load(), total_pushes.load()); // Pops should be less or equal to pushes
 
-//     // The buffer should either be full or have fewer items depending on the last operation's timing
-//     EXPECT_LE(buffer.size(), buffer_capacity);  // Check if buffer size is within its capacity
+    // The buffer should either be full or have fewer items depending on the last operation's timing
+    EXPECT_LE(buffer.size(), buffer_capacity);  // Check if buffer size is within its capacity
 
-//     // Clear the buffer and check
-//     std::vector<size_t> remaining_elements;
-//     remaining_elements.reserve(buffer_capacity);
-//     while (buffer.empty()) {
-//         auto val = buffer.top_pop();
-//         if (val.has_value()) {
-//             remaining_elements.push_back(val.value());
-//         }
-//     }
-//     EXPECT_TRUE(remaining_elements.size() <= buffer_capacity); // Remaining elements should not exceed buffer capacity
-// }
+    // Clear the buffer and check
+    std::vector<size_t> remaining_elements;
+    remaining_elements.reserve(buffer_capacity);
+    while (buffer.empty()) {
+        auto val = buffer.top_pop();
+        if (val.has_value()) {
+            remaining_elements.push_back(val.value());
+        }
+    }
+    EXPECT_TRUE(remaining_elements.size() <= buffer_capacity); // Remaining elements should not exceed buffer capacity
+}
 
 // Test that ensures buffer correctly overwrites old data
 TEST(CircularBufferFixedTest, OverwriteOldEntries) {
@@ -360,8 +360,8 @@ TEST(CircularBufferFixedTest, CopyAssignmentOperator) {
     buffer1.push(2);
     buffer1.push(3);
 
-    CircularBuffer::CircularBufferFixed<int, 5> buffer2;
-    buffer2 = buffer1;
+    // CircularBuffer::CircularBufferFixed<int, 5> buffer2;
+    auto buffer2 = buffer1;
     EXPECT_EQ(buffer2.size(), 3);
     EXPECT_EQ(buffer2.top_pop().value(), 1);
     EXPECT_EQ(buffer2.top_pop().value(), 2);
@@ -374,7 +374,7 @@ TEST(CircularBufferFixedTest, MoveConstructor) {
     buffer.push(2);
     buffer.push(3);
 
-    CircularBuffer::CircularBufferFixed<int, 5> movedBuffer(std::move(buffer));
+    auto movedBuffer(std::move(buffer));
     EXPECT_EQ(movedBuffer.size(), 3);
     EXPECT_EQ(movedBuffer.top_pop().value(), 1);
     EXPECT_EQ(movedBuffer.top_pop().value(), 2);
@@ -390,8 +390,8 @@ TEST(CircularBufferFixedTest, MoveAssignmentOperator) {
     buffer1.push(2);
     buffer1.push(3);
 
-    CircularBuffer::CircularBufferFixed<int, 5> buffer2;
-    buffer2 = std::move(buffer1);
+    // CircularBuffer::CircularBufferFixed<int, 5> buffer2;
+    auto buffer2 = std::move(buffer1);
     EXPECT_EQ(buffer2.size(), 3);
     EXPECT_EQ(buffer2.top_pop().value(), 1);
     EXPECT_EQ(buffer2.top_pop().value(), 2);
