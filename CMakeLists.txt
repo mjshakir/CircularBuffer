@@ -51,6 +51,8 @@ endif()
 option(BUILD_CIRCULARBUFFER_SHARED_LIBS "Build using shared libraries" ON)
 option(BUILD_CIRCULARBUFFER_EXAMPLE "Build CircularBuffer example" ${CIRCULARBUFFER_STANDALONE_PROJECT})
 option(BUILD_CIRCULARBUFFER_TESTS "Build CircularBuffer tests" ${CIRCULARBUFFER_STANDALONE_PROJECT})
+option(BUILD_CIRCULARBUFFER_MULTI_THREADING "Enable multi-threading support." OFF)
+set(HAS_TBB OFF CACHE BOOL "Set to TRUE if TBB is found, otherwise FALSE")
 #------------------------------------------------------------------------------------------
 # Force colored output
 option(FORCE_COLORED_OUTPUT "Always produce ANSI-colored output (GNU/Clang only)." OFF)
@@ -65,6 +67,15 @@ endif()
 # Define the source and include directories
 set(CIRCULARBUFFER_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(CIRCULARBUFFER_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
+#------------------------------------------------------------------------------------------
+# Find TBB
+find_package(TBB QUIET)
+if(TBB_FOUND)
+    set(HAS_TBB ON)
+    message(STATUS "Intel TBB found: ${TBB_VERSION}")
+else()
+    set(HAS_TBB OFF)
+endif()
 #------------------------------------------------------------------------------------------
 # Define the source files
 set(CIRCULARBUFFER_SOURCES
@@ -97,6 +108,16 @@ else()
     set(CIRCULARBUFFER_LIBRARIES ${PROJECT_NAME}::${PROJECT_NAME} PARENT_SCOPE)
 endif()
 message(STATUS "CIRCULARBUFFER_LIBRARIES: ${CIRCULARBUFFER_LIBRARIES}")
+#------------------------------------------------------------------------------------------
+# Conditional compilation and warnings
+if(BUILD_CIRCULARBUFFER_MULTI_THREADING)
+    if(HAS_TBB)
+        message(STATUS "Multi-threading enabled with Intel TBB.")
+        target_link_libraries(${PROJECT_NAME} PRIVATE TBB::tbb)
+    else()
+        message(WARNING "\033[1;33mMulti-threading is enabled, but Intel TBB is not found. Compiling without multi-threading support.\033[0m")
+    endif()
+endif()
 #------------------------------------------------------------------------------------------
 # Building examples
 if(BUILD_CIRCULARBUFFER_EXAMPLE)
