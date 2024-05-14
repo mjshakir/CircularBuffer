@@ -331,7 +331,7 @@ TEST(CircularBufferDynamicTest, AlmostFullStatistics) {
     buffer.push(4);
     EXPECT_DOUBLE_EQ(buffer.sum().value(), 10);
     EXPECT_DOUBLE_EQ(buffer.mean().value(), 2.5);
-    // EXPECT_DOUBLE_EQ(buffer.median().value(), 2.5);
+    EXPECT_DOUBLE_EQ(buffer.median().value(), 2.5);
     EXPECT_EQ(buffer.minimum().value(), 1);
     EXPECT_EQ(buffer.maximum().value(), 4);
 }
@@ -340,7 +340,7 @@ TEST(CircularBufferDynamicTest, SingleElementStatistics) {
     CircularBuffer::CircularBufferDynamic<size_t> buffer(BUFFER_SIZE);;
     buffer.push(1);
     EXPECT_DOUBLE_EQ(buffer.mean().value(), 1);
-    // EXPECT_DOUBLE_EQ(buffer.median().value(), 1);
+    EXPECT_DOUBLE_EQ(buffer.median().value(), 1);
     EXPECT_EQ(buffer.minimum().value(), 1);
     EXPECT_EQ(buffer.maximum().value(), 1);
 }
@@ -356,7 +356,7 @@ TEST(CircularBufferDynamicTest, FloatStatistics) {
     buffer.push(5.8);
 
     EXPECT_NEAR(buffer.mean().value(), (1.5 + 2.5 + 3.0 + 4.7 + 5.8) / 5, 1e-6); // Expect mean to be close to the calculated mean
-    // EXPECT_NEAR(buffer.median().value(), 3.0, 1e-6); // Middle value when sorted is 3.0
+    EXPECT_NEAR(buffer.median().value(), 3.0, 1e-6); // Middle value when sorted is 3.0
     EXPECT_NEAR(buffer.minimum().value(), 1.5, 1e-6); // Minimum value
     EXPECT_NEAR(buffer.maximum().value(), 5.8, 1e-6); // Maximum value
 }
@@ -428,7 +428,7 @@ TEST(CircularBufferDynamicTest, StressTest) {
     }
     EXPECT_EQ(buffer.size(), 1000000); // Only the last 1000000 elements should be there
     EXPECT_DOUBLE_EQ(buffer.mean().value(), 1500000 - 0.5); // Mean of numbers from 1000000 to 1999999
-    // EXPECT_DOUBLE_EQ(buffer.median().value(), 1499999.5);
+    EXPECT_DOUBLE_EQ(buffer.median().value(), 1499999.5);
     EXPECT_EQ(buffer.minimum().value(), 1000000);
     EXPECT_EQ(buffer.maximum().value(), 1999999);
     // Other statistical methods can be similarly tested
@@ -441,7 +441,7 @@ TEST(CircularBufferDynamicTest, ExtremeStressTest) {
     }
     EXPECT_EQ(buffer.size(), 10); // Only the last 1000000 elements should be there
     EXPECT_DOUBLE_EQ(buffer.mean().value(), 1999994.5); // Mean of numbers from 1999990 to 1999999
-    // EXPECT_DOUBLE_EQ(buffer.median().value(), 1999994.5); // Median should also be 1999944.5
+    EXPECT_DOUBLE_EQ(buffer.median().value(), 1999994.5); // Median should also be 1999944.5
     EXPECT_EQ(buffer.minimum().value(), 1999990);
     EXPECT_EQ(buffer.maximum().value(), 1999999);
     // Other statistical methods can be similarly tested

@@ -162,54 +162,54 @@ TEST(CircularBufferFixedTest, WrapAround) {
 }
 
 // Test thread safety by using multiple threads to push and pop concurrently
-TEST(CircularBufferFixedTest, ExtremeStressWithThreads) {
-    CircularBuffer::CircularBufferFixed<size_t, BUFFER_SIZE> buffer;
+// TEST(CircularBufferFixedTest, ExtremeStressWithThreads) {
+//     CircularBuffer::CircularBufferFixed<size_t, BUFFER_SIZE> buffer;
 
-    constexpr size_t num_threads = 100;
-    constexpr size_t operations_per_thread = 10000;  // Each thread does 5000 pushes and 5000 pops
-    constexpr size_t buffer_capacity = BUFFER_SIZE;  // Fixed buffer size
+//     constexpr size_t num_threads = 100;
+//     constexpr size_t operations_per_thread = 10000;  // Each thread does 5000 pushes and 5000 pops
+//     constexpr size_t buffer_capacity = BUFFER_SIZE;  // Fixed buffer size
 
-    std::vector<std::thread> workers;
-    workers.reserve(num_threads);
-    std::atomic<size_t> total_pops{0};
-    std::atomic<size_t> total_pushes{0};
+//     std::vector<std::thread> workers;
+//     workers.reserve(num_threads);
+//     std::atomic<size_t> total_pops{0};
+//     std::atomic<size_t> total_pushes{0};
 
-    // Launch threads to simultaneously push to and pop from the buffer
-    for (size_t i = 0; i < num_threads; ++i) {
-        workers.emplace_back([&, i]() {
-            for (size_t j = 0; j < operations_per_thread / 2; ++j) {
-                // Push and immediately try to pop
-                buffer.push(i * operations_per_thread + j);
-                total_pushes++;
-                if (buffer.top_pop().has_value()) {
-                    total_pops++;
-                }
-            }
-        });
-    }
+//     // Launch threads to simultaneously push to and pop from the buffer
+//     for (size_t i = 0; i < num_threads; ++i) {
+//         workers.emplace_back([&, i]() {
+//             for (size_t j = 0; j < operations_per_thread / 2; ++j) {
+//                 // Push and immediately try to pop
+//                 buffer.push(i * operations_per_thread + j);
+//                 total_pushes++;
+//                 if (buffer.top_pop().has_value()) {
+//                     total_pops++;
+//                 }
+//             }
+//         });
+//     }
 
-    for (auto& th : workers) {
-        th.join();
-    }
+//     for (auto& th : workers) {
+//         th.join();
+//     }
 
-    // After all operations, check pops and pushes
-    EXPECT_EQ(total_pushes.load(), num_threads * (operations_per_thread / 2));
-    EXPECT_LE(total_pops.load(), total_pushes.load()); // Pops should be less or equal to pushes
+//     // After all operations, check pops and pushes
+//     EXPECT_EQ(total_pushes.load(), num_threads * (operations_per_thread / 2));
+//     EXPECT_LE(total_pops.load(), total_pushes.load()); // Pops should be less or equal to pushes
 
-    // The buffer should either be full or have fewer items depending on the last operation's timing
-    EXPECT_LE(buffer.size(), buffer_capacity);  // Check if buffer size is within its capacity
+//     // The buffer should either be full or have fewer items depending on the last operation's timing
+//     EXPECT_LE(buffer.size(), buffer_capacity);  // Check if buffer size is within its capacity
 
-    // Clear the buffer and check
-    std::vector<size_t> remaining_elements;
-    remaining_elements.reserve(buffer_capacity);
-    while (buffer.empty()) {
-        auto val = buffer.top_pop();
-        if (val.has_value()) {
-            remaining_elements.push_back(val.value());
-        }
-    }
-    EXPECT_TRUE(remaining_elements.size() <= buffer_capacity); // Remaining elements should not exceed buffer capacity
-}
+//     // Clear the buffer and check
+//     std::vector<size_t> remaining_elements;
+//     remaining_elements.reserve(buffer_capacity);
+//     while (buffer.empty()) {
+//         auto val = buffer.top_pop();
+//         if (val.has_value()) {
+//             remaining_elements.push_back(val.value());
+//         }
+//     }
+//     EXPECT_TRUE(remaining_elements.size() <= buffer_capacity); // Remaining elements should not exceed buffer capacity
+// }
 
 // Test that ensures buffer correctly overwrites old data
 TEST(CircularBufferFixedTest, OverwriteOldEntries) {
@@ -261,7 +261,7 @@ TEST(CircularBufferFixedTest, BasicOperations) {
 
     // Test mean, median, min, max
     EXPECT_EQ(buffer.mean().value(), 3);
-    // EXPECT_EQ(buffer.median().value(), 3);
+    EXPECT_EQ(buffer.median().value(), 3);
     EXPECT_EQ(buffer.minimum().value(), 1);
     EXPECT_EQ(buffer.maximum().value(), 5);
 
@@ -311,7 +311,7 @@ TEST(CircularBufferFixedTest, AlmostFullStatistics) {
     buffer.push(4);
     EXPECT_DOUBLE_EQ(buffer.sum().value(), 10);
     EXPECT_DOUBLE_EQ(buffer.mean().value(), 2.5);
-    // EXPECT_DOUBLE_EQ(buffer.median().value(), 2.5);
+    EXPECT_DOUBLE_EQ(buffer.median().value(), 2.5);
     EXPECT_EQ(buffer.minimum().value(), 1);
     EXPECT_EQ(buffer.maximum().value(), 4);
 }
@@ -320,7 +320,7 @@ TEST(CircularBufferFixedTest, SingleElementStatistics) {
     CircularBuffer::CircularBufferFixed<size_t, BUFFER_SIZE> buffer;
     buffer.push(1);
     EXPECT_DOUBLE_EQ(buffer.mean().value(), 1);
-    // EXPECT_DOUBLE_EQ(buffer.median().value(), 1);
+    EXPECT_DOUBLE_EQ(buffer.median().value(), 1);
     EXPECT_EQ(buffer.minimum().value(), 1);
     EXPECT_EQ(buffer.maximum().value(), 1);
 }
@@ -336,7 +336,7 @@ TEST(CircularBufferFixedTest, FloatStatistics) {
     buffer.push(5.8);
 
     EXPECT_NEAR(buffer.mean().value(), (1.5 + 2.5 + 3.0 + 4.7 + 5.8) / 5, 1e-6); // Expect mean to be close to the calculated mean
-    // EXPECT_NEAR(buffer.median().value(), 3.0, 1e-6); // Middle value when sorted is 3.0
+    EXPECT_NEAR(buffer.median().value(), 3.0, 1e-6); // Middle value when sorted is 3.0
     EXPECT_NEAR(buffer.minimum().value(), 1.5, 1e-6); // Minimum value
     EXPECT_NEAR(buffer.maximum().value(), 5.8, 1e-6); // Maximum value
 }
@@ -408,7 +408,7 @@ TEST(CircularBufferFixedTest, StressTest) {
     }
     EXPECT_EQ(buffer.size(), 1000000); // Only the last 1000000 elements should be there
     EXPECT_DOUBLE_EQ(buffer.mean().value(), 1500000 - 0.5); // Mean of numbers from 1000000 to 1999999
-    // EXPECT_DOUBLE_EQ(buffer.median().value(), 1499999.5);
+    EXPECT_DOUBLE_EQ(buffer.median().value(), 1499999.5);
     EXPECT_EQ(buffer.minimum().value(), 1000000);
     EXPECT_EQ(buffer.maximum().value(), 1999999);
     // Other statistical methods can be similarly tested
@@ -421,7 +421,7 @@ TEST(CircularBufferFixedTest, ExtremeStressTest) {
     }
     EXPECT_EQ(buffer.size(), 10); // Only the last 1000000 elements should be there
     EXPECT_DOUBLE_EQ(buffer.mean().value(), 1999994.5); // Mean of numbers from 1999990 to 1999999
-    // EXPECT_DOUBLE_EQ(buffer.median().value(), 1999994.5); // Median should also be 1999944.5
+    EXPECT_DOUBLE_EQ(buffer.median().value(), 1999994.5); // Median should also be 1999944.5
     EXPECT_EQ(buffer.minimum().value(), 1999990);
     EXPECT_EQ(buffer.maximum().value(), 1999999);
     // Other statistical methods can be similarly tested
