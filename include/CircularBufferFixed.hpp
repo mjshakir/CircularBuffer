@@ -11,7 +11,11 @@
 #include <cstddef>
 #include <cmath>
 #include <algorithm>
-#include <tuple>
+#if __has_include(<execution>)
+    #if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
+        #include <execution>
+    #endif
+#endif
 //--------------------------------------------------------------
 namespace CircularBuffer {
     //--------------------------------------------------------------
@@ -47,7 +51,7 @@ namespace CircularBuffer {
                 if constexpr (std::is_arithmetic_v<T>) {
                     m_sum           = other.m_sum.load();
                     m_sum_squares   = other.m_sum_squares.load();
-                }
+                }//end if constexpr (std::is_arithmetic_v<T>)
                 //--------------------------
             }// end CircularBufferFixed(const CircularBufferFixed& other)
             //--------------------------
@@ -143,9 +147,19 @@ namespace CircularBuffer {
             }//end std::optional<T> max(void) const
             //--------------------------
             template <typename U = T>
-            std::enable_if_t<std::is_arithmetic<U>::value, std::optional<std::tuple<T, T>>> minimum_maximum(void) const {
-                return get_min_max();
-            }//end std::optional<T> min_max(void) const
+            std::enable_if_t<std::is_arithmetic<U>::value, std::optional<std::array<T, N>>> sorted(void) const {
+                return get_sorted();
+            }//end std::optional<std::array<T, N>> sorted(void) const
+            //--------------------------
+            template <typename U = T>
+            std::enable_if_t<std::is_arithmetic<U>::value, std::optional<std::array<T, N>>> reverse_sorted(void) const {
+                return get_reverse_sorted();
+            }//end std::optional<std::array<T, N>> reverse_sorted(void) const
+            //--------------------------
+            template <typename U = T>
+            std::enable_if_t<std::is_arithmetic<U>::value, std::optional<double>> median(void) const {
+                return get_median();
+            }//end std::optional<T> median(void) const
             //--------------------------
             typename std::array<T, N>::iterator begin(void) {
                 return m_buffer.begin();
@@ -260,7 +274,7 @@ namespace CircularBuffer {
                 m_buffer.at(current_tail) = std::move(item);
                 //--------------------------
                 if constexpr (std::is_arithmetic<T>::value){
-                    const T& current_item_ = m_buffer.at(current_tail);
+                    const T current_item_ = m_buffer.at(current_tail);
                     m_sum.store(m_sum.load(std::memory_order_relaxed) + current_item_, std::memory_order_relaxed);
                     m_sum_squares.store(m_sum_squares.load(std::memory_order_relaxed) + std::pow(current_item_, 2), std::memory_order_relaxed);
                 }//end if constexpr (std::is_arithmetic<T>::value)
@@ -335,7 +349,14 @@ namespace CircularBuffer {
                 //--------------------------
                 size_t current_head = m_head.load(std::memory_order_acquire);
                 //--------------------------
-                T value = m_buffer[current_head];
+                T value = m_buffer.at(current_head);
+                //--------------------------
+                if constexpr (std::is_arithmetic<T>::value){
+                    //--------------------------
+                    m_sum.store(m_sum.load(std::memory_order_relaxed) - value, std::memory_order_relaxed);
+                    m_sum_squares.store(m_sum_squares.load(std::memory_order_relaxed) - std::pow(value, 2), std::memory_order_relaxed);
+                    //--------------------------
+                }//end if constexpr (std::is_arithmetic<T>::value)
                 //--------------------------
                 current_head = increment(current_head);
                 //--------------------------
@@ -365,6 +386,14 @@ namespace CircularBuffer {
                                                     std::memory_order_relaxed));
                 //--------------------------
                 // Destroy the object at the old head, if it's a non-trivial type
+                //--------------------------
+                if constexpr (std::is_arithmetic<T>::value){
+                    //--------------------------
+                    const T old_item_ = m_buffer.at(current_head);
+                    m_sum.store(m_sum.load(std::memory_order_relaxed) - old_item_, std::memory_order_relaxed);
+                    m_sum_squares.store(m_sum_squares.load(std::memory_order_relaxed) - std::pow(old_item_, 2), std::memory_order_relaxed);
+                    //--------------------------
+                }//end if constexpr (std::is_arithmetic<T>::value)
                 //--------------------------
                 m_buffer[current_head].~T();
                 //--------------------------
@@ -457,7 +486,11 @@ namespace CircularBuffer {
                     return std::nullopt;
                 }//end if(is_empty())
                 //--------------------------
+#if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
+                return *std::min_element(std::execution::par, m_buffer.begin(), m_buffer.begin() + m_count.load(std::memory_order_relaxed));
+#else
                 return *std::min_element(m_buffer.begin(), m_buffer.begin() + m_count.load(std::memory_order_relaxed));
+#endif
                 //--------------------------
             }//end std::optional<T> get_min(void) const
             //--------------------------
@@ -468,21 +501,81 @@ namespace CircularBuffer {
                     return std::nullopt;
                 }//end if(is_empty())
                 //--------------------------
+#if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
+                return *std::max_element(std::execution::par, m_buffer.begin(), m_buffer.begin() + m_count.load(std::memory_order_relaxed));
+#else
                 return *std::max_element(m_buffer.begin(), m_buffer.begin() + m_count.load(std::memory_order_relaxed));
+#endif
                 //--------------------------
             }//end std::optional<T> get_max(void) const
             //--------------------------
             template <typename U = T>
-            std::enable_if_t<std::is_arithmetic<U>::value, std::optional<std::tuple<T, T>>> get_min_max(void) const {
+            std::enable_if_t<std::is_arithmetic<U>::value, std::optional<std::array<T, N>>> get_sorted(void) const {
                 //--------------------------
                 if(is_empty()){
                     return std::nullopt;
                 }//end if(is_empty())
                 //--------------------------
-                const auto min_max = std::minmax_element(m_buffer.begin(), m_buffer.begin() + m_count.load(std::memory_order_relaxed));
-                return {*min_max.first, *min_max.second};
+                std::array<T, N> sorted_buffer = m_buffer;
+#if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
+                std::sort(std::execution::par, sorted_buffer.begin(), sorted_buffer.begin() + m_count.load(std::memory_order_relaxed));
+#else
+                std::sort(sorted_buffer.begin(), sorted_buffer.begin() + m_count.load(std::memory_order_relaxed));
+#endif
+                return sorted_buffer;
                 //--------------------------
-            }//end std::optional<T> get_min_max(void) const
+            }//end std::optional<std::array<T, N>> get_sorted(void) const
+            //--------------------------
+            template <typename U = T>
+            std::enable_if_t<std::is_arithmetic<U>::value, std::optional<std::array<T, N>>> get_reverse_sorted(void) const {
+                //--------------------------
+                if(is_empty()){
+                    return std::nullopt;
+                }//end if(is_empty())
+                //--------------------------
+                std::array<T, N> sorted_buffer = m_buffer;
+#if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
+                std::sort(std::execution::par, sorted_buffer.begin(), sorted_buffer.begin() + m_count.load(std::memory_order_relaxed), std::greater<T>());
+#else
+                std::sort(sorted_buffer.begin(), sorted_buffer.begin() + m_count.load(std::memory_order_relaxed), std::greater<T>());
+#endif
+                return sorted_buffer;
+                //--------------------------
+            }//end std::optional<std::array<T, N>> get_reverse_sorted(void) const
+            //--------------------------
+            template <typename U = T>
+            std::enable_if_t<std::is_arithmetic<U>::value, std::optional<double>> get_median(void) const {
+                //--------------------------
+                if(is_empty()){
+                    return std::nullopt;
+                }//end if(is_empty())
+                //--------------------------
+                std::array<T, N> sorted_buffer = m_buffer;
+                const size_t count_         = m_count.load(std::memory_order_relaxed);
+                const size_t half_count_    = count_ / 2UL;
+                //--------------------------
+#if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
+                std::nth_element(std::execution::par, sorted_buffer.begin(), sorted_buffer.begin() + half_count_, sorted_buffer.begin() + count_);
+#else
+                std::nth_element(sorted_buffer.begin(), sorted_buffer.begin() + half_count_, sorted_buffer.begin() + count_);
+#endif
+                //--------------------------
+                if (count_ % 2UL == 0) {
+                    //--------------------------
+                    const T median_1 = sorted_buffer.at(half_count_ - 1);
+#if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
+                    std::nth_element(std::execution::par, sorted_buffer.begin() + half_count_, sorted_buffer.begin() + half_count_, sorted_buffer.begin() + count_);
+#else
+                    std::nth_element(sorted_buffer.begin() + half_count_, sorted_buffer.begin() + half_count_, sorted_buffer.begin() + count_);
+#endif
+                    const T median_2 = sorted_buffer.at(half_count_);
+                    return static_cast<double>(static_cast<double>(median_1) + static_cast<double>(median_2) / 2.);
+                    //--------------------------
+                }//end if (count_ % 2 == 0)
+                //--------------------------
+                return static_cast<double>(sorted_buffer.at(half_count_));
+                //--------------------------
+            }//end std::optional<T> get_median(void) const
             //--------------------------------------------------------------
         private:
             //--------------------------------------------------------------
