@@ -59,6 +59,11 @@
         "barrier": "cpp",
         "any": "cpp",
         "condition_variable": "cpp",
-        "unordered_set": "cpp"
+        "unordered_set": "cpp",
+        "csignal": "cpp",
+        "forward_list": "cpp",
+        "fstream": "cpp",
+        "list": "cpp",
+        "type_traits": "cpp"
     }
 }
