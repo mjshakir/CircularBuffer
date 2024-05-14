@@ -37,7 +37,7 @@ namespace CircularBuffer {
             CircularBufferDynamic(const CircularBufferDynamic& other) : m_max_size(other.m_max_size),
                                                                         m_buffer(other.m_buffer) {
                 //--------------------------
-                std::scoped_lock<std::mutex> lock(m_mutex, other.m_mutex);
+                std::scoped_lock lock(m_mutex, other.m_mutex);
                 //--------------------------
                 if constexpr (std::is_arithmetic_v<T>) {
                     m_sum           = other.m_sum;
@@ -52,7 +52,7 @@ namespace CircularBuffer {
                     return *this;
                 }//end if(this == &other)
                 //--------------------------
-                std::scoped_lock<std::mutex> lock(m_mutex, other.m_mutex);
+                std::scoped_lock lock(m_mutex, other.m_mutex);
                 //--------------------------
                 m_max_size = other.m_max_size;
                 m_buffer = other.m_buffer;
@@ -68,7 +68,7 @@ namespace CircularBuffer {
             CircularBufferDynamic(CircularBufferDynamic&& other) noexcept : m_max_size(other.m_max_size),
                                                                             m_buffer(std::move(other.m_buffer)){
                 //--------------------------
-                std::scoped_lock<std::mutex> lock(m_mutex, other.m_mutex);
+                std::scoped_lock lock(m_mutex, other.m_mutex);
                 //--------------------------
                 if constexpr (std::is_arithmetic_v<T>) {
                     m_sum           = std::move(other.m_sum);
@@ -77,13 +77,13 @@ namespace CircularBuffer {
                 //--------------------------
             }// end CircularBufferDynamic(CircularBufferDynamic&& other)
             //--------------------------
-            CircularBufferDynamic& operator=(const CircularBufferDynamic& other) noexcept {
+            CircularBufferDynamic& operator=(CircularBufferDynamic&& other) noexcept {
                 //--------------------------
                 if(this == &other){
                     return *this;
                 }//end if(this == &other)
                 //--------------------------
-                std::scoped_lock<std::mutex> lock(m_mutex, other.m_mutex);
+                std::scoped_lock lock(m_mutex, other.m_mutex);
                 //--------------------------
                 m_max_size = other.m_max_size;
                 m_buffer = std::move(other.m_buffer);
