@@ -34,15 +34,6 @@ namespace CircularBuffer {
                 //--------------------------
             }// end CircularBufferFixed(void)
             //--------------------------
-            // template <typename U = T, std::enable_if_t<!std::is_arithmetic<U>::value, int> = 0>
-            // CircularBufferFixed(const CircularBufferFixed& other) : m_head(other.m_head.load()), 
-            //                                                         m_tail(other.m_tail.load()), 
-            //                                                         m_count(other.m_count.load()), 
-            //                                                         m_buffer(other.m_buffer) {
-            //     //--------------------------
-            // }// end CircularBufferFixed(const CircularBufferFixed& other)
-            // //--------------------------
-            // template <typename U = T, std::enable_if_t<std::is_arithmetic<U>::value, int> = 0>
             CircularBufferFixed(const CircularBufferFixed& other) : m_head(other.m_head.load()), 
                                                                     m_tail(other.m_tail.load()), 
                                                                     m_count(other.m_count.load()), 
@@ -206,17 +197,7 @@ namespace CircularBuffer {
                     //--------------------------
                     if (is_full()) {  // Buffer is full
                         //--------------------------
-                        if constexpr (std::is_arithmetic<T>::value){
-                            //--------------------------
-                            const T old_item_ = get_top_pop().value_or(0);
-                            m_sum.store(m_sum.load(std::memory_order_relaxed) - old_item_, std::memory_order_relaxed);
-                            m_sum_squares.store(m_sum_squares.load(std::memory_order_relaxed) - std::pow(old_item_, 2), std::memory_order_relaxed);
-                            //--------------------------
-                        } else {
-                            //--------------------------
-                            static_cast<void>(pop_front());  // Attempt to clear space
-                            //--------------------------
-                        }//end if constexpr (std::is_arithmetic<T>::value)
+                        static_cast<void>(pop_front());  // Attempt to clear space
                         //--------------------------
                     }// end if (is_full())
                     //--------------------------
@@ -230,8 +211,15 @@ namespace CircularBuffer {
                 m_buffer.at(current_tail) = item;
                 //--------------------------
                 if constexpr (std::is_arithmetic<T>::value){
-                    m_sum.store(m_sum.load(std::memory_order_relaxed) + item, std::memory_order_relaxed);
-                    m_sum_squares.store(m_sum_squares.load(std::memory_order_relaxed) + std::pow(item, 2), std::memory_order_relaxed);
+                    //--------------------------
+                    if constexpr (std::is_floating_point<T>::value){
+                        atomic_add(m_sum, item);
+                        atomic_add(m_sum_squares, std::pow(item, 2));
+                    } else {
+                        m_sum.fetch_add(item, std::memory_order_relaxed);
+                        m_sum_squares.fetch_add(std::pow(item, 2), std::memory_order_relaxed);
+                    }//end if constexpr (std::is_floating_point<T>::value)
+                    //--------------------------
                 }//end if constexpr (std::is_arithmetic<T>::value)
                 //--------------------------
                 m_tail.store(next_tail, std::memory_order_release);
@@ -250,17 +238,7 @@ namespace CircularBuffer {
                     //--------------------------
                     if (is_full()) {  // Buffer is full
                         //--------------------------
-                        if constexpr (std::is_arithmetic<T>::value){
-                            //--------------------------
-                            const T old_item_ = get_top_pop().value_or(0);
-                            m_sum.store(m_sum.load(std::memory_order_relaxed) - old_item_, std::memory_order_relaxed);
-                            m_sum_squares.store(m_sum_squares.load(std::memory_order_relaxed) - std::pow(old_item_, 2), std::memory_order_relaxed);
-                            //--------------------------
-                        } else {
-                            //--------------------------
-                            static_cast<void>(pop_front());  // Attempt to clear space
-                            //--------------------------
-                        }//end if constexpr (std::is_arithmetic<T>::value)
+                        static_cast<void>(pop_front());  // Attempt to clear space
                         //--------------------------
                     }// end if (is_full())
                     //--------------------------
@@ -274,9 +252,16 @@ namespace CircularBuffer {
                 m_buffer.at(current_tail) = std::move(item);
                 //--------------------------
                 if constexpr (std::is_arithmetic<T>::value){
+                    //--------------------------
                     const T current_item_ = m_buffer.at(current_tail);
-                    m_sum.store(m_sum.load(std::memory_order_relaxed) + current_item_, std::memory_order_relaxed);
-                    m_sum_squares.store(m_sum_squares.load(std::memory_order_relaxed) + std::pow(current_item_, 2), std::memory_order_relaxed);
+                    //--------------------------
+                    if constexpr (std::is_floating_point<T>::value){
+                        atomic_add(m_sum, current_item_);
+                        atomic_add(m_sum_squares, std::pow(current_item_, 2));
+                    } else {
+                        m_sum.fetch_add(current_item_, std::memory_order_relaxed);
+                        m_sum_squares.fetch_add(std::pow(current_item_, 2), std::memory_order_relaxed);
+                    }//end if constexpr (std::is_floating_point<T>::value)
                 }//end if constexpr (std::is_arithmetic<T>::value)
                 //--------------------------
                 m_tail.store(next_tail, std::memory_order_release);
@@ -296,18 +281,8 @@ namespace CircularBuffer {
                     //--------------------------
                     if (is_full()) {  // Buffer is full
                         //--------------------------
-                        if constexpr (std::is_arithmetic<T>::value){
-                            //--------------------------
-                            const T old_item_ = get_top_pop().value_or(0);
-                            m_sum.store(m_sum.load(std::memory_order_relaxed) - old_item_, std::memory_order_relaxed);
-                            m_sum_squares.store(m_sum_squares.load(std::memory_order_relaxed) - std::pow(old_item_, 2), std::memory_order_relaxed);
-                            //--------------------------
-                        } else {
-                            //--------------------------
-                            static_cast<void>(pop_front());  // Attempt to clear space
-                            //--------------------------
-                        }//end if constexpr (std::is_arithmetic<T>::value)
-                        //--------------------------
+                        static_cast<void>(pop_front());  // Attempt to clear space
+                        //--------------------------x
                     }// end if (is_full())
                     //--------------------------
                     if (next_tail == m_head.load(std::memory_order_acquire)) {
@@ -320,9 +295,17 @@ namespace CircularBuffer {
                 new (&m_buffer[current_tail]) T(std::forward<Args>(args)...);  // Construct in-place
                 //--------------------------
                 if constexpr (std::is_arithmetic<T>::value){
-                    const T& current_item_ = m_buffer.at(current_tail);
-                    m_sum.store(m_sum.load(std::memory_order_relaxed) + current_item_, std::memory_order_relaxed);
-                    m_sum_squares.store(m_sum_squares.load(std::memory_order_relaxed) + std::pow(current_item_, 2), std::memory_order_relaxed);
+                    //--------------------------
+                    const T current_item_ = m_buffer.at(current_tail);
+                    //--------------------------
+                    if constexpr (std::is_floating_point<T>::value){
+                        atomic_add(m_sum, current_item_);
+                        atomic_add(m_sum_squares, std::pow(current_item_, 2));
+                    } else {
+                        m_sum.fetch_add(current_item_, std::memory_order_relaxed);
+                        m_sum_squares.fetch_add(std::pow(current_item_, 2), std::memory_order_relaxed);
+                    }//end if constexpr (std::is_floating_point<T>::value)
+                    //--------------------------
                 }//end if constexpr (std::is_arithmetic<T>::value)
                 //--------------------------
                 m_count.fetch_add(1, std::memory_order_release);
@@ -353,8 +336,13 @@ namespace CircularBuffer {
                 //--------------------------
                 if constexpr (std::is_arithmetic<T>::value){
                     //--------------------------
-                    m_sum.store(m_sum.load(std::memory_order_relaxed) - value, std::memory_order_relaxed);
-                    m_sum_squares.store(m_sum_squares.load(std::memory_order_relaxed) - std::pow(value, 2), std::memory_order_relaxed);
+                    if constexpr (std::is_floating_point<T>::value){
+                        atomic_sub(m_sum, value);
+                        atomic_sub(m_sum_squares, std::pow(value, 2));
+                    } else {
+                        m_sum.fetch_sub(value, std::memory_order_relaxed);
+                        m_sum_squares.fetch_sub(std::pow(value, 2), std::memory_order_relaxed);
+                    }//end if constexpr (std::is_floating_point<T>::value)
                     //--------------------------
                 }//end if constexpr (std::is_arithmetic<T>::value)
                 //--------------------------
@@ -369,13 +357,14 @@ namespace CircularBuffer {
             //--------------------------
             bool pop_front(void)  {
                 //--------------------------
-                size_t current_head, next_head;
+                size_t current_head{0}, next_head{0};
                 //--------------------------
                 do {
                     //--------------------------
                     current_head = m_head.load(std::memory_order_acquire);
                     //--------------------------
                     if (is_empty()) {
+                        std::this_thread::yield(); // buffer empty, yield before retrying
                         return false; // Buffer is empty, nothing to pop
                     }// end if (is_empty())
                     //--------------------------
@@ -390,8 +379,14 @@ namespace CircularBuffer {
                 if constexpr (std::is_arithmetic<T>::value){
                     //--------------------------
                     const T old_item_ = m_buffer.at(current_head);
-                    m_sum.store(m_sum.load(std::memory_order_relaxed) - old_item_, std::memory_order_relaxed);
-                    m_sum_squares.store(m_sum_squares.load(std::memory_order_relaxed) - std::pow(old_item_, 2), std::memory_order_relaxed);
+                    //--------------------------
+                    if constexpr (std::is_floating_point<T>::value){
+                        atomic_sub(m_sum, old_item_);
+                        atomic_sub(m_sum_squares, std::pow(old_item_, 2));
+                    } else {
+                        m_sum.fetch_sub(old_item_, std::memory_order_relaxed);
+                        m_sum_squares.fetch_sub(std::pow(old_item_, 2), std::memory_order_relaxed);
+                    }//end if constexpr (std::is_floating_point<T>::value)
                     //--------------------------
                 }//end if constexpr (std::is_arithmetic<T>::value)
                 //--------------------------
@@ -452,7 +447,7 @@ namespace CircularBuffer {
                     return std::nullopt;
                 }//end if(is_empty())
                 //--------------------------
-                return static_cast<double>(static_cast<double>(m_sum.load(std::memory_order_relaxed)) / m_count.load(std::memory_order_relaxed));
+                return static_cast<double>(m_sum.load(std::memory_order_relaxed)) / m_count.load(std::memory_order_relaxed);
                 //--------------------------
             }//end std::optional<T> get_mean(void) const
             //--------------------------
@@ -463,8 +458,16 @@ namespace CircularBuffer {
                     return std::nullopt;
                 }//end if(is_empty())
                 //--------------------------
-                const double mean_ = get_mean().value_or(0);
-                return (m_sum_squares.load(std::memory_order_relaxed) / m_count.load(std::memory_order_relaxed)) - std::pow(mean_, 2);
+                const size_t count_ = m_count.load(std::memory_order_relaxed);
+                //--------------------------
+                if (count_ < 2) {
+                    return std::nullopt;
+                }//end if (count < 2)
+                //--------------------------
+                const double mean_ = get_mean().value_or(0.);
+                //--------------------------
+                return ((static_cast<double>(m_sum_squares.load(std::memory_order_relaxed)) / static_cast<double>(count_)) - std::pow(mean_, 2)) * 
+                            (static_cast<double>(count_) / static_cast<double>(count_ - 1));
                 //--------------------------
             }//end std::optional<T> get_variance(void) const
             //--------------------------
@@ -475,7 +478,7 @@ namespace CircularBuffer {
                     return std::nullopt;
                 }//end if(is_empty())
                 //--------------------------
-                return std::sqrt(get_variance().value_or(0));
+                return std::sqrt(get_variance().value_or(0.));
                 //--------------------------
             }//end std::optional<T> get_standard_deviation(void) const
             //--------------------------
@@ -516,7 +519,7 @@ namespace CircularBuffer {
                     return std::nullopt;
                 }//end if(is_empty())
                 //--------------------------
-                std::array<T, N> sorted_buffer = m_buffer;
+                auto sorted_buffer = m_buffer;
 #if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
                 std::sort(std::execution::par, sorted_buffer.begin(), sorted_buffer.begin() + m_count.load(std::memory_order_relaxed));
 #else
@@ -533,7 +536,7 @@ namespace CircularBuffer {
                     return std::nullopt;
                 }//end if(is_empty())
                 //--------------------------
-                std::array<T, N> sorted_buffer = m_buffer;
+                auto sorted_buffer = m_buffer;
 #if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
                 std::sort(std::execution::par, sorted_buffer.begin(), sorted_buffer.begin() + m_count.load(std::memory_order_relaxed), std::greater<T>());
 #else
@@ -550,7 +553,7 @@ namespace CircularBuffer {
                     return std::nullopt;
                 }//end if(is_empty())
                 //--------------------------
-                std::array<T, N> sorted_buffer = m_buffer;
+                auto sorted_buffer          = m_buffer;
                 const size_t count_         = m_count.load(std::memory_order_relaxed);
                 const size_t half_count_    = count_ / 2UL;
                 //--------------------------
@@ -569,13 +572,38 @@ namespace CircularBuffer {
                     std::nth_element(sorted_buffer.begin() + half_count_, sorted_buffer.begin() + half_count_, sorted_buffer.begin() + count_);
 #endif
                     const T median_2 = sorted_buffer.at(half_count_);
-                    return static_cast<double>(static_cast<double>(median_1) + static_cast<double>(median_2) / 2.);
+                    //--------------------------
+                    return static_cast<double>(median_1 + median_2) / 2.;
                     //--------------------------
                 }//end if (count_ % 2 == 0)
                 //--------------------------
                 return static_cast<double>(sorted_buffer.at(half_count_));
                 //--------------------------
             }//end std::optional<T> get_median(void) const
+            //--------------------------
+            template <typename U = T, typename R>
+            std::enable_if_t<std::is_floating_point<U>::value, void>
+            atomic_add(std::atomic<U>& atomic, const R& value) {
+                //--------------------------
+                U current = atomic.load(std::memory_order_relaxed);
+                //--------------------------
+                while (!atomic.compare_exchange_weak(current, current + value, std::memory_order_relaxed)) {
+                    // retry
+                }//end while (!atomic.compare_exchange_weak(current, current + value, std::memory_order_relaxed))
+                //--------------------------
+            }//end void atomic_add(std::atomic<T>& atomic, const T& value)
+            //--------------------------
+            template <typename U = T, typename R>
+            std::enable_if_t<std::is_floating_point<U>::value, void>
+            atomic_sub(std::atomic<U>& atomic, const R& value) {
+                //--------------------------
+                U current = atomic.load(std::memory_order_relaxed);
+                //--------------------------
+                while (!atomic.compare_exchange_weak(current, current - value, std::memory_order_relaxed)) {
+                    // retry
+                }// end while (!atomic.compare_exchange_weak(current, current - value, std::memory_order_relaxed))
+                //--------------------------
+            }//end void atomic_sub(std::atomic<T>& atomic, const T& value)
             //--------------------------------------------------------------
         private:
             //--------------------------------------------------------------
