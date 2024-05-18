@@ -656,9 +656,9 @@ TEST(CircularBufferDynamicTest, SingleProducerMultipleConsumers) {
 // Multiple Producers, Multiple Consumers
 TEST(CircularBufferDynamicTest, MultipleProducersMultipleConsumers) {
     CircularBuffer::CircularBufferDynamic<size_t> buffer(100);
-    const size_t items_to_produce = 1000;
-    std::atomic<size_t> produced_count(0);
-    std::atomic<size_t> consumed_count(0);
+    constexpr size_t items_to_produce = 1000UL;
+    std::atomic<size_t> produced_count(0UL);
+    std::atomic<size_t> consumed_count(0UL);
     std::condition_variable cv;
     std::mutex mtx;
     bool ready = false;
