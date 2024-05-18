@@ -27,9 +27,10 @@ jobs:
       run: |
         Invoke-WebRequest -Uri "https://github.com/oneapi-src/oneTBB/releases/download/v2021.7.0/oneapi-tbb-2021.7.0-win.zip" -OutFile "tbb.zip"
         Expand-Archive -Path "tbb.zip" -DestinationPath "tbb"
-        echo "TBB_ROOT=$(pwd)/tbb" >> $GITHUB_ENV
+        echo "TBB_ROOT=$(pwd)/tbb/oneapi-tbb-2021.7.0" >> $GITHUB_ENV
         echo "TBB_LIB_DIR=$(pwd)/tbb/oneapi-tbb-2021.7.0/lib/intel64/vc14" >> $GITHUB_ENV
         echo "TBB_INCLUDE_DIR=$(pwd)/tbb/oneapi-tbb-2021.7.0/include" >> $GITHUB_ENV
+        echo "CMAKE_PREFIX_PATH=$(pwd)/tbb/oneapi-tbb-2021.7.0/cmake" >> $GITHUB_ENV
 
     - name: Check MSVC Version
       run: |
@@ -59,7 +60,7 @@ jobs:
     - name: Configure CMake
       if: steps.check_msvc.outputs.skip_step != 'true'
       run: |
-        cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DBUILD_THREADPOOL_SHARED_LIBS=ON -DBUILD_CIRCULARBUFFER_MULTI_THREADING=ON -DTBB_ROOT="$env:TBB_ROOT" -DTBB_LIB_DIR="$env:TBB_LIB_DIR" -DTBB_INCLUDE_DIR="$env:TBB_INCLUDE_DIR"
+        cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DBUILD_THREADPOOL_SHARED_LIBS=ON -DBUILD_CIRCULARBUFFER_MULTI_THREADING=ON -DCMAKE_PREFIX_PATH="$env:CMAKE_PREFIX_PATH"
 
     - name: Build
       run: cmake --build build --config ${{ env.BUILD_TYPE }} --verbose
