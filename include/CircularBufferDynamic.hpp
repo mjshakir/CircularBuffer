@@ -139,47 +139,83 @@ namespace CircularBuffer {
             //--------------------------
             template <typename U = T>
             std::enable_if_t<std::is_arithmetic<U>::value, std::optional<U>> sum(void) const {
+                //--------------------------
+                std::unique_lock<std::mutex> lock(m_mutex);
+                //--------------------------
                 return get_sum();
+                //--------------------------
             }// end std::optional<T> sum(void) const
             //--------------------------
             template <typename U = T>
             std::enable_if_t<std::is_arithmetic<U>::value, std::optional<double>> mean(void) const {
+                //--------------------------
+                std::unique_lock<std::mutex> lock(m_mutex);
+                //--------------------------
                 return get_mean();
+                //--------------------------
             }// end std::optional<T> mean(void) const
             //--------------------------
             template <typename U = T>
             std::enable_if_t<std::is_arithmetic<U>::value, std::optional<double>> variance(void) const {
+                //--------------------------
+                std::unique_lock<std::mutex> lock(m_mutex);
+                //--------------------------
                 return get_variance();
+                //--------------------------
             }// end std::optional<T> variance(void) const
             //--------------------------
             template <typename U = T>
             std::enable_if_t<std::is_arithmetic<U>::value, std::optional<double>> standard_deviation(void) const {
+                //--------------------------
+                std::unique_lock<std::mutex> lock(m_mutex);
+                //--------------------------
                 return get_standard_deviation();
+                //--------------------------
             }// end std::optional<T> standard_deviation(void) const
             //--------------------------
             template <typename U = T>
             std::enable_if_t<std::is_arithmetic<U>::value, std::optional<U>> minimum(void) const {
+                //--------------------------
+                std::unique_lock<std::mutex> lock(m_mutex);
+                //--------------------------
                 return get_min();
+                //--------------------------
             }// end std::optional<T> min(void) const
             //--------------------------
             template <typename U = T>
             std::enable_if_t<std::is_arithmetic<U>::value, std::optional<U>> maximum(void) const {
+                //--------------------------
+                std::unique_lock<std::mutex> lock(m_mutex);
+                //--------------------------
                 return get_max();
+                //--------------------------
             }// end std::optional<T> max(void) const
             //--------------------------
             template <typename U = T>
             std::enable_if_t<std::is_arithmetic<U>::value, std::optional<std::vector<U>>> sorted(void) const {
+                //--------------------------
+                std::unique_lock<std::mutex> lock(m_mutex);
+                //--------------------------
                 return get_sorted();
+                //--------------------------
             }// end std::optional<std::vector<T>> sorted(void) const
             //--------------------------
             template <typename U = T>
             std::enable_if_t<std::is_arithmetic<U>::value, std::optional<std::vector<U>>> reverse_sorted(void) const {
+                //--------------------------
+                std::unique_lock<std::mutex> lock(m_mutex);
+                //--------------------------
                 return get_reverse_sorted();
+                //--------------------------
             }// end std::optional<std::vector<T>> reverse_sorted(void) const
             //--------------------------
             template <typename U = T>
-            std::enable_if_t<std::is_arithmetic<U>::value, std::optional<U>> median(void) const {
+            std::enable_if_t<std::is_arithmetic<U>::value, std::optional<double>> median(void) const {
+                //--------------------------
+                std::unique_lock<std::mutex> lock(m_mutex);
+                //--------------------------
                 return get_median();
+                //--------------------------
             }// end std::optional<T> median(void) const
             //--------------------------
             typename std::deque<T>::iterator begin(void) {
@@ -389,8 +425,6 @@ namespace CircularBuffer {
             template <typename U = T>
             std::enable_if_t<std::is_arithmetic<U>::value, std::optional<U>> get_sum(void) const {
                 //--------------------------
-                std::unique_lock<std::mutex> lock(m_mutex);
-                //--------------------------
                 if (m_buffer.empty()) {
                     return std::nullopt;
                 }// end if (m_buffer.empty())
@@ -401,8 +435,6 @@ namespace CircularBuffer {
             //--------------------------
             template <typename U = T>
             std::enable_if_t<std::is_arithmetic<U>::value, std::optional<double>> get_mean(void) const {
-                //--------------------------
-                std::unique_lock<std::mutex> lock(m_mutex);
                 //--------------------------
                 if (m_buffer.empty()) {
                     return std::nullopt;
@@ -415,21 +447,25 @@ namespace CircularBuffer {
             template <typename U = T>
             std::enable_if_t<std::is_arithmetic<U>::value, std::optional<double>> get_variance(void) const {
                 //--------------------------
-                std::unique_lock<std::mutex> lock(m_mutex);
-                //--------------------------
                 if (m_buffer.empty()) {
                     return std::nullopt;
                 }// end if (m_buffer.empty())
                 //--------------------------
-                const double mean_ = get_mean().value_or(0);
-                return (m_sum_squares / m_buffer.size()) - std::pow(mean_, 2);
+                const size_t size_ = m_buffer.size();
+                //--------------------------
+                if (size_ < 2) {
+                    return std::nullopt;
+                }//end if (size_ < 2)
+                //--------------------------
+                const double mean_ = get_mean().value_or(0.);
+                //--------------------------
+                return ((static_cast<double>(m_sum_squares) / static_cast<double>(size_)) - std::pow(mean_, 2)) * 
+                        (static_cast<double>(size_) / static_cast<double>(size_ - 1));
                 //--------------------------
             }// end std::optional<T> get_variance(void) const
             //--------------------------
             template <typename U = T>
             std::enable_if_t<std::is_arithmetic<U>::value, std::optional<double>> get_standard_deviation(void) const {
-                //--------------------------
-                std::unique_lock<std::mutex> lock(m_mutex);
                 //--------------------------
                 if (m_buffer.empty()) {
                     return std::nullopt;
@@ -441,8 +477,6 @@ namespace CircularBuffer {
             //--------------------------
             template <typename U = T>
             std::enable_if_t<std::is_arithmetic<U>::value, std::optional<U>> get_min(void) const {
-                //--------------------------
-                std::unique_lock<std::mutex> lock(m_mutex);
                 //--------------------------
                 if (m_buffer.empty()) {
                     return std::nullopt;
@@ -458,8 +492,6 @@ namespace CircularBuffer {
             //--------------------------
             template <typename U = T>
             std::enable_if_t<std::is_arithmetic<U>::value, std::optional<U>> get_max(void) const {
-                //--------------------------
-                std::unique_lock<std::mutex> lock(m_mutex);
                 //--------------------------
                 if (m_buffer.empty()) {
                     return std::nullopt;
@@ -482,7 +514,7 @@ namespace CircularBuffer {
                     return std::nullopt;
                 }// end if (m_buffer.empty())
                 //--------------------------
-                std::vector<U> sorted_buffer(m_buffer.begin(), m_buffer.end());
+                auto sorted_buffer = m_buffer;
 #if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
                 std::sort(std::execution::par, sorted_buffer.begin(), sorted_buffer.end());
 #else
@@ -501,7 +533,7 @@ namespace CircularBuffer {
                     return std::nullopt;
                 }// end if (m_buffer.empty())
                 //--------------------------
-                std::vector<U> sorted_buffer(m_buffer.begin(), m_buffer.end());
+                auto sorted_buffer = m_buffer;
 #if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
                 std::sort(std::execution::par, sorted_buffer.rbegin(), sorted_buffer.rend());
 #else
@@ -514,13 +546,11 @@ namespace CircularBuffer {
             template <typename U = T>
             std::enable_if_t<std::is_arithmetic<U>::value, std::optional<double>> get_median(void) const {
                 //--------------------------
-                std::unique_lock<std::mutex> lock(m_mutex);
-                //--------------------------
                 if (m_buffer.empty()) {
                     return std::nullopt;
                 }// end if (m_buffer.empty())
                 //--------------------------
-                std::vector<U> sorted_buffer(m_buffer.begin(), m_buffer.end());
+                auto sorted_buffer = m_buffer;
                 const size_t size_      = sorted_buffer.size();
                 const size_t half_size_ = size_ / 2UL;
                 //--------------------------
@@ -532,14 +562,15 @@ namespace CircularBuffer {
                 //--------------------------
                 if (size_ % 2UL == 0) {
                     //--------------------------
-                    const U median_1 = sorted_buffer.at(half_size_);
+                    const double median_1 = static_cast<double>(sorted_buffer.at(half_size_));
 #if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
                     std::nth_element(std::execution::par, sorted_buffer.begin(), sorted_buffer.begin() + half_size_ - 1, sorted_buffer.begin() + half_size_);
 #else
                     std::nth_element(sorted_buffer.begin(), sorted_buffer.begin() + half_size_ - 1, sorted_buffer.begin() + half_size_);
 #endif
-                    const U median_2 = sorted_buffer.at(half_size_ - 1);
-                    return static_cast<double>(static_cast<double>(median_1) + static_cast<double>(median_2) / 2.);
+                    const double median_2 = static_cast<double>(sorted_buffer.at(half_size_ - 1));
+                    //--------------------------
+                    return (median_1 + median_2) / 2.;
                     //--------------------------
                 }// end if (size_ % 2UL == 0)
                 //--------------------------
