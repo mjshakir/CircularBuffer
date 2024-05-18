@@ -3,6 +3,7 @@
 #include <atomic>
 #include <mutex>
 #include <unordered_set>
+#include <condition_variable>
 #include <gtest/gtest.h>
 #include "CircularBufferDynamic.hpp"
 
@@ -280,7 +281,10 @@ TEST(CircularBufferDynamicTest, BasicOperations) {
     EXPECT_EQ(buffer.size(), 5);
 
     // Test mean, median, min, max
+    EXPECT_EQ(buffer.sum().value(), 15);
     EXPECT_EQ(buffer.mean().value(), 3);
+    EXPECT_NEAR(buffer.variance().value(), 2.5, 1e-6); 
+    EXPECT_NEAR(buffer.standard_deviation().value(), std::sqrt(2.5), 1e-6);
     EXPECT_EQ(buffer.median().value(), 3);
     EXPECT_EQ(buffer.minimum().value(), 1);
     EXPECT_EQ(buffer.maximum().value(), 5);
@@ -298,8 +302,14 @@ TEST(CircularBufferDynamicTest, Overflow) {
     buffer.push(2);
     buffer.push(3);
     buffer.push(4); // This will remove 1
+    
     EXPECT_EQ(buffer.size(), 3);
+    EXPECT_EQ(buffer.sum().value(), 9);
+    EXPECT_EQ(buffer.mean().value(), 3);
+    EXPECT_NEAR(buffer.variance().value(), 1, 1e-6);
+    EXPECT_NEAR(buffer.standard_deviation().value(), 1, 1e-6);
     EXPECT_EQ(buffer.minimum().value(), 2);
+    EXPECT_EQ(buffer.maximum().value(), 4);
 }
 
 TEST(CircularBufferDynamicTest, Reset) {
@@ -331,6 +341,8 @@ TEST(CircularBufferDynamicTest, AlmostFullStatistics) {
     buffer.push(4);
     EXPECT_DOUBLE_EQ(buffer.sum().value(), 10);
     EXPECT_DOUBLE_EQ(buffer.mean().value(), 2.5);
+    EXPECT_NEAR(buffer.variance().value(), 1.6666666666666667, 1e-6);
+    EXPECT_NEAR(buffer.standard_deviation().value(), 1.2909944487358056, 1e-6);
     EXPECT_DOUBLE_EQ(buffer.median().value(), 2.5);
     EXPECT_EQ(buffer.minimum().value(), 1);
     EXPECT_EQ(buffer.maximum().value(), 4);
@@ -339,6 +351,8 @@ TEST(CircularBufferDynamicTest, AlmostFullStatistics) {
 TEST(CircularBufferDynamicTest, SingleElementStatistics) {
     CircularBuffer::CircularBufferDynamic<size_t> buffer(BUFFER_SIZE);;
     buffer.push(1);
+
+    EXPECT_DOUBLE_EQ(buffer.sum().value(), 1);
     EXPECT_DOUBLE_EQ(buffer.mean().value(), 1);
     EXPECT_DOUBLE_EQ(buffer.median().value(), 1);
     EXPECT_EQ(buffer.minimum().value(), 1);
@@ -355,7 +369,18 @@ TEST(CircularBufferDynamicTest, FloatStatistics) {
     buffer.push(4.7);
     buffer.push(5.8);
 
-    EXPECT_NEAR(buffer.mean().value(), (1.5 + 2.5 + 3.0 + 4.7 + 5.8) / 5, 1e-6); // Expect mean to be close to the calculated mean
+    constexpr double expected_mean = (1.5 + 2.5 + 3.0 + 4.7 + 5.8) / 5;
+
+    EXPECT_NEAR(buffer.sum().value(), 1.5 + 2.5 + 3.0 + 4.7 + 5.8, 1e-6); // Expect sum to be close to the calculated sum
+    EXPECT_NEAR(buffer.mean().value(), expected_mean, 1e-6); // Expect mean to be close to the calculated mean
+    // Calculate the expected variance and standard deviation with Bessel's correction
+    const double expected_variance = ((std::pow(1.5 - expected_mean, 2) + std::pow(2.5 - expected_mean, 2) +
+                                 std::pow(3.0 - expected_mean, 2) + std::pow(4.7 - expected_mean, 2) + 
+                                 std::pow(5.8 - expected_mean, 2)) / 4); // Using N-1
+    const double expected_std_dev = std::sqrt(expected_variance);
+
+    EXPECT_NEAR(buffer.variance().value(), expected_variance, 1e-5);
+    EXPECT_NEAR(buffer.standard_deviation().value(), expected_std_dev, 1e-6);
     EXPECT_NEAR(buffer.median().value(), 3.0, 1e-6); // Middle value when sorted is 3.0
     EXPECT_NEAR(buffer.minimum().value(), 1.5, 1e-6); // Minimum value
     EXPECT_NEAR(buffer.maximum().value(), 5.8, 1e-6); // Maximum value
@@ -380,7 +405,6 @@ TEST(CircularBufferDynamicTest, CopyAssignmentOperator) {
     buffer1.push(2);
     buffer1.push(3);
 
-    // CircularBuffer::CircularBufferDynamic<int> buffer2(BUFFER_SIZE);
     auto buffer2 = buffer1;
     EXPECT_EQ(buffer2.size(), 3);
     EXPECT_EQ(buffer2.top_pop().value(), 1);
@@ -410,7 +434,6 @@ TEST(CircularBufferDynamicTest, MoveAssignmentOperator) {
     buffer1.push(2);
     buffer1.push(3);
 
-    // CircularBuffer::CircularBufferDynamic<int> buffer2(BUFFER_SIZE);
     auto buffer2 = std::move(buffer1);
     EXPECT_EQ(buffer2.size(), 3);
     EXPECT_EQ(buffer2.top_pop().value(), 1);
@@ -421,33 +444,263 @@ TEST(CircularBufferDynamicTest, MoveAssignmentOperator) {
     EXPECT_TRUE(buffer1.empty() or !buffer1.empty());
 }
 
-TEST(CircularBufferDynamicTest, StressTest) {
-    CircularBuffer::CircularBufferDynamic<size_t> buffer(1000000);
-    for (size_t i = 0; i < 2000000; ++i) {
-        buffer.push(i);
-    }
-    EXPECT_EQ(buffer.size(), 1000000); // Only the last 1000000 elements should be there
-    EXPECT_DOUBLE_EQ(buffer.mean().value(), 1500000 - 0.5); // Mean of numbers from 1000000 to 1999999
-    EXPECT_DOUBLE_EQ(buffer.median().value(), 1499999.5);
-    EXPECT_EQ(buffer.minimum().value(), 1000000);
-    EXPECT_EQ(buffer.maximum().value(), 1999999);
-    // Other statistical methods can be similarly tested
-}
-
 TEST(CircularBufferDynamicTest, ExtremeStressTest) {
     CircularBuffer::CircularBufferDynamic<size_t> buffer(10);
     for (size_t i = 0; i < 2000000; ++i) {
         buffer.push(i);
     }
     EXPECT_EQ(buffer.size(), 10); // Only the last 1000000 elements should be there
+    EXPECT_EQ(buffer.sum().value(), 19999945); // Sum of numbers from 1999990 to 1999999
     EXPECT_DOUBLE_EQ(buffer.mean().value(), 1999994.5); // Mean of numbers from 1999990 to 1999999
+    // Calculate the expected variance and standard deviation with Bessel's correction
+    constexpr double expected_mean = 1999994.5;
+    const double expected_variance =    ((std::pow(1999990 - expected_mean, 2) + std::pow(1999991 - expected_mean, 2) +
+                                        std::pow(1999992 - expected_mean, 2) + std::pow(1999993 - expected_mean, 2) +
+                                        std::pow(1999994 - expected_mean, 2) + std::pow(1999995 - expected_mean, 2) +
+                                        std::pow(1999996 - expected_mean, 2) + std::pow(1999997 - expected_mean, 2) +
+                                        std::pow(1999998 - expected_mean, 2) + std::pow(1999999 - expected_mean, 2)) / 9); // Using N-1
+    const double expected_std_dev = std::sqrt(expected_variance);
+
+    EXPECT_NEAR(buffer.variance().value(), expected_variance, 1e-6);
+    EXPECT_NEAR(buffer.standard_deviation().value(), expected_std_dev, 1e-6);
     EXPECT_DOUBLE_EQ(buffer.median().value(), 1999994.5); // Median should also be 1999944.5
     EXPECT_EQ(buffer.minimum().value(), 1999990);
     EXPECT_EQ(buffer.maximum().value(), 1999999);
     // Other statistical methods can be similarly tested
 }
 
-int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+TEST(CircularBufferDynamicTest, ExtremeStressTestDouble) {
+    CircularBuffer::CircularBufferDynamic<double> buffer(10);
+    for (size_t i = 0; i < 2000000; ++i) {
+        buffer.push(static_cast<double>(i) + 0.5);
+    }
+
+    constexpr double expected_mean = 1999995.0;
+    EXPECT_EQ(buffer.size(), 10); // Only the last 10 elements should be there
+    EXPECT_DOUBLE_EQ(buffer.sum().value(), 19999950.0); // Sum of numbers from 1999990.5 to 1999999.5
+    EXPECT_DOUBLE_EQ(buffer.mean().value(), expected_mean); // Mean of numbers from 1999990.5 to 1999999.5
+    // Calculate the expected variance and standard deviation with Bessel's correction
+    const double expected_variance = ((std::pow(1999990.5 - expected_mean, 2) + std::pow(1999991.5 - expected_mean, 2) +
+                                 std::pow(1999992.5 - expected_mean, 2) + std::pow(1999993.5 - expected_mean, 2) +
+                                 std::pow(1999994.5 - expected_mean, 2) + std::pow(1999995.5 - expected_mean, 2) +
+                                 std::pow(1999996.5 - expected_mean, 2) + std::pow(1999997.5 - expected_mean, 2) +
+                                 std::pow(1999998.5 - expected_mean, 2) + std::pow(1999999.5 - expected_mean, 2)) / 9); // Using N-1
+    const double expected_std_dev = std::sqrt(expected_variance);
+
+    EXPECT_NEAR(buffer.variance().value(), expected_variance, 1e-6);
+    EXPECT_NEAR(buffer.standard_deviation().value(), expected_std_dev, 1e-6);
+    EXPECT_DOUBLE_EQ(buffer.median().value(), 1999995.0); // Median should also be 1999995.0
+    EXPECT_DOUBLE_EQ(buffer.minimum().value(), 1999990.5);
+    EXPECT_DOUBLE_EQ(buffer.maximum().value(), 1999999.5);
+    // Other statistical methods can be similarly tested
 }
+
+
+TEST(CircularBufferDynamicTest, StressTest) {
+    constexpr size_t buffer_size = 500000UL;
+    CircularBuffer::CircularBufferDynamic<size_t> buffer(buffer_size);
+    for (size_t i = 0; i < 2000000; ++i) {
+        buffer.push(i);
+    }
+
+    EXPECT_EQ(buffer.size(), buffer_size); // Only the last 1000000 elements should be there
+
+    constexpr size_t start_value = 1500000UL;
+    constexpr size_t end_value = 1999999UL;
+    constexpr size_t num_elements = end_value - start_value + 1UL;
+
+    constexpr size_t expected_sum = (num_elements * (start_value + end_value)) / 2; // Sum of numbers from 1000000 to 1999999
+    constexpr double expected_mean = (start_value + end_value) / 2.0; // Mean of numbers from 1000000 to 1999999
+
+    EXPECT_EQ(buffer.sum().value(), expected_sum);
+    EXPECT_DOUBLE_EQ(buffer.mean().value(), expected_mean);
+
+    // Calculate the expected variance and standard deviation with Bessel's correction
+    double variance_sum = 0.0;
+    for (size_t i = start_value; i <= end_value; ++i) {
+        variance_sum += std::pow(static_cast<double>(i) - expected_mean, 2);
+    }
+    const double expected_variance = variance_sum / (num_elements - 1);
+    const double expected_std_dev = std::sqrt(expected_variance);
+
+    EXPECT_NEAR(buffer.variance().value(), expected_variance, 1e1);
+    EXPECT_NEAR(buffer.standard_deviation().value(), expected_std_dev, 1e-3);
+    EXPECT_DOUBLE_EQ(buffer.median().value(), expected_mean);
+    EXPECT_EQ(buffer.minimum().value(), start_value);
+    EXPECT_EQ(buffer.maximum().value(), end_value);
+    // Other statistical methods can be similarly tested
+}
+
+template <typename T>
+void fill_buffer(T& buffer, size_t start, size_t end) {
+    for (size_t i = start; i < end; ++i) {
+        buffer.push(i);
+    }
+}
+
+// Test helper function to empty the buffer
+template <typename T>
+void empty_buffer(T& buffer, size_t count) {
+    for (size_t i = 0; i < count; ++i) {
+        buffer.pop();
+    }
+}
+
+TEST(CircularBufferDynamicTest, SingleProducerSingleConsumer) {
+    CircularBuffer::CircularBufferDynamic<size_t> buffer(100);
+    std::atomic<bool> done(false);
+
+    std::thread producer([&buffer, &done]() {
+        fill_buffer(buffer, 0, 1000);
+        done.store(true);
+    });
+
+    std::thread consumer([&buffer, &done]() {
+        while (!done.load() or !buffer.empty()) {
+            buffer.pop();
+        }
+    });
+
+    producer.join();
+    consumer.join();
+
+    EXPECT_TRUE(buffer.empty());
+}
+
+// Multiple Producers, 1 Consumer
+TEST(CircularBufferDynamicTest, MultipleProducersSingleConsumer) {
+    CircularBuffer::CircularBufferDynamic<size_t> buffer(100);
+    std::atomic<size_t> produced_count(0);
+    constexpr size_t items_to_produce = 1000;
+    std::condition_variable cv;
+    std::mutex mtx;
+    bool ready = false;
+
+    auto producer = [&](size_t start) {
+        for (size_t i = start; i < start + items_to_produce / 2; ++i) {
+            buffer.push(i);
+            ++produced_count;
+        }
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+            ready = true;
+        }
+        cv.notify_all();
+    };
+
+    std::thread producer1(producer, 0);
+    std::thread producer2(producer, items_to_produce / 2);
+
+    std::thread consumer([&]() {
+        size_t consumed_count = 0;
+        std::unique_lock<std::mutex> lock(mtx);
+        cv.wait(lock, [&]() { return ready; });
+
+        while (consumed_count < items_to_produce and !buffer.empty()) {
+            if (buffer.pop()) {
+                ++consumed_count;
+            }
+        }
+    });
+
+    producer1.join();
+    producer2.join();
+    consumer.join();
+
+    EXPECT_TRUE(buffer.empty());
+}
+
+// 1 Producer, Multiple Consumers
+TEST(CircularBufferDynamicTest, SingleProducerMultipleConsumers) {
+    CircularBuffer::CircularBufferDynamic<size_t> buffer(100);
+    const size_t items_to_produce = 1000;
+    std::atomic<size_t> consumed_count(0);
+    std::atomic<size_t> produced_count(0);
+    std::condition_variable cv;
+    std::mutex mtx;
+    bool ready = false;
+
+    std::thread producer([&]() {
+        for (size_t i = 0; i < items_to_produce; ++i) {
+            buffer.push(i);
+            ++produced_count;
+        }
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+            ready = true;
+        }
+        cv.notify_all();
+    });
+
+    auto consumer = [&]() {
+        std::unique_lock<std::mutex> lock(mtx);
+        cv.wait(lock, [&]() { return ready; });
+
+        while (consumed_count < items_to_produce and !buffer.empty()) {
+            if (buffer.pop()) {
+                ++consumed_count;
+            }
+        }
+    };
+
+    std::thread consumer1(consumer);
+    std::thread consumer2(consumer);
+
+    producer.join();
+    consumer1.join();
+    consumer2.join();
+
+    EXPECT_TRUE(buffer.empty());
+}
+
+// Multiple Producers, Multiple Consumers
+TEST(CircularBufferDynamicTest, MultipleProducersMultipleConsumers) {
+    CircularBuffer::CircularBufferDynamic<size_t> buffer(100);
+    const size_t items_to_produce = 1000;
+    std::atomic<size_t> produced_count(0);
+    std::atomic<size_t> consumed_count(0);
+    std::condition_variable cv;
+    std::mutex mtx;
+    bool ready = false;
+
+    auto producer = [&](size_t start) {
+        for (size_t i = start; i < start + items_to_produce / 2; ++i) {
+            buffer.push(i);
+            ++produced_count;
+        }
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+            ready = true;
+        }
+        cv.notify_all();
+    };
+
+    auto consumer = [&]() {
+        std::unique_lock<std::mutex> lock(mtx);
+        cv.wait(lock, [&]() { return ready; });
+
+        while (consumed_count < items_to_produce and !buffer.empty()) {
+            if (produced_count.load() > consumed_count.load() && buffer.pop()) {
+                ++consumed_count;
+            }
+        }
+    };
+
+    std::thread producer1(producer, 0);
+    std::thread producer2(producer, items_to_produce / 2);
+
+    std::thread consumer1(consumer);
+    std::thread consumer2(consumer);
+
+    producer1.join();
+    producer2.join();
+    consumer1.join();
+    consumer2.join();
+
+    EXPECT_TRUE(buffer.empty());
+}
+
+// int main(int argc, char **argv) {
+//     ::testing::InitGoogleTest(&argc, argv);
+//     return RUN_ALL_TESTS();
+// }
