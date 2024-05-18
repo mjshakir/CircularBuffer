@@ -21,6 +21,14 @@ jobs:
     - name: Setup MSVC
       uses: ilammy/msvc-dev-cmd@v1
 
+    - name: Install Intel TBB for ARM
+      run: |
+        Invoke-WebRequest -Uri "https://github.com/oneapi-src/oneTBB/releases/download/v2021.7.0/oneapi-tbb-2021.7.0-win.zip" -OutFile "tbb.zip"
+        Expand-Archive -Path "tbb.zip" -DestinationPath "tbb"
+        echo "TBB_ROOT=$(pwd)/tbb" >> $GITHUB_ENV
+        echo "TBB_LIB_DIR=$(pwd)/tbb/oneapi-tbb-2021.7.0/lib/intel64/vc14" >> $GITHUB_ENV
+        echo "TBB_INCLUDE_DIR=$(pwd)/tbb/oneapi-tbb-2021.7.0/include" >> $GITHUB_ENV
+
     - name: Check MSVC Version
       run: |
         try {
@@ -51,8 +59,9 @@ jobs:
 
     - name: Configure CMake
       if: steps.check_msvc.outputs.skip_step != 'true'
-      run: cmake -S . -B build -DBUILD_CIRCULARBUFFER_MULTI_THREADING=ON -DCMAKE_BUILD_TYPE=Release 
-    
+      run: |
+        cmake -S . -B build -DBUILD_CIRCULARBUFFER_MULTI_THREADING=ON -DCMAKE_BUILD_TYPE=Release -DTBB_ROOT="$env:TBB_ROOT" -DTBB_LIB_DIR="$env:TBB_LIB_DIR" -DTBB_INCLUDE_DIR="$env:TBB_INCLUDE_DIR"
+
     - name: List build directory contents
       run: ls -R build/
       
