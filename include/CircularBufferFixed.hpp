@@ -525,23 +525,27 @@ namespace CircularBuffer {
                 const size_t count_         = m_count.load(std::memory_order_relaxed);
                 const size_t half_count_    = count_ / 2UL;
                 //--------------------------
+                if (count_ == 1) {
+                    return static_cast<double>(sorted_buffer.at(0));
+                }//end if (count_ == 1)
+                //--------------------------
 #if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
-                std::nth_element(std::execution::par, sorted_buffer.begin(), sorted_buffer.begin() + half_count_, sorted_buffer.begin() + count_);
+                std::nth_element(std::execution::par, sorted_buffer.begin(), sorted_buffer.begin() + half_count_, sorted_buffer.end());
 #else
-                std::nth_element(sorted_buffer.begin(), sorted_buffer.begin() + half_count_, sorted_buffer.begin() + count_);
+                std::nth_element(sorted_buffer.begin(), sorted_buffer.begin() + half_count_, sorted_buffer.end());
 #endif
                 //--------------------------
                 if (count_ % 2UL == 0) {
                     //--------------------------
-                    const double median_1 = static_cast<double>(sorted_buffer.at(half_count_ - 1));
+                    const double median_1 = static_cast<double>(sorted_buffer.at(half_count_));
 #if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
-                    std::nth_element(std::execution::par, sorted_buffer.begin() + half_count_, sorted_buffer.begin() + half_count_, sorted_buffer.begin() + count_);
+                    std::nth_element(std::execution::par, sorted_buffer.begin(), sorted_buffer.begin() + half_count_ - 1, sorted_buffer.end());
 #else
-                    std::nth_element(sorted_buffer.begin() + half_count_, sorted_buffer.begin() + half_count_, sorted_buffer.begin() + count_);
+                    std::nth_element(sorted_buffer.begin(), sorted_buffer.begin() + half_count_ - 1, sorted_buffer.end());
 #endif
-                    const double median_2 = static_cast<double>(sorted_buffer.at(half_count_));
+                    const double median_2 = static_cast<double>(sorted_buffer.at(half_count_ - 1));
                     //--------------------------
-                    return (median_1 + median_2) / 2.;
+                    return (median_1 + median_2) / 2.0;
                     //--------------------------
                 }//end if (count_ % 2 == 0)
                 //--------------------------
