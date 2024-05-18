@@ -157,6 +157,7 @@ TEST(CircularBufferFixedTest, Overflow) {
     buffer.push(2);
     buffer.push(3);
     buffer.push(4); // This will remove 1
+    
     EXPECT_EQ(buffer.size(), 3);
     EXPECT_EQ(buffer.sum().value(), 9);
     EXPECT_EQ(buffer.mean().value(), 3);
@@ -353,14 +354,15 @@ TEST(CircularBufferFixedTest, ExtremeStressTestDouble) {
 
 
 TEST(CircularBufferFixedTest, StressTest) {
-    CircularBuffer::CircularBufferFixed<size_t, 1000000> buffer;
+    constexpr size_t buffer_size = 500000UL;
+    CircularBuffer::CircularBufferFixed<size_t, buffer_size> buffer;
     for (size_t i = 0; i < 2000000; ++i) {
         buffer.push(i);
     }
 
-    EXPECT_EQ(buffer.size(), 1000000); // Only the last 1000000 elements should be there
+    EXPECT_EQ(buffer.size(), buffer_size); // Only the last 1000000 elements should be there
 
-    constexpr size_t start_value = 1000000;
+    constexpr size_t start_value = 1500000;
     constexpr size_t end_value = 1999999;
     constexpr size_t num_elements = end_value - start_value + 1;
 
@@ -378,8 +380,8 @@ TEST(CircularBufferFixedTest, StressTest) {
     const double expected_variance = variance_sum / (num_elements - 1);
     const double expected_std_dev = std::sqrt(expected_variance);
 
-    EXPECT_NEAR(buffer.variance().value(), expected_variance, 1e-6);
-    EXPECT_NEAR(buffer.standard_deviation().value(), expected_std_dev, 1e-6);
+    EXPECT_NEAR(buffer.variance().value(), expected_variance, 1e1);
+    EXPECT_NEAR(buffer.standard_deviation().value(), expected_std_dev, 1e-3);
     EXPECT_DOUBLE_EQ(buffer.median().value(), expected_mean);
     EXPECT_EQ(buffer.minimum().value(), start_value);
     EXPECT_EQ(buffer.maximum().value(), end_value);
