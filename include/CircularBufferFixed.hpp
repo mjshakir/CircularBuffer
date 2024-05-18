@@ -201,9 +201,9 @@ namespace CircularBuffer {
                         //--------------------------
                     }// end if (is_full())
                     //--------------------------
-                    if (next_tail == m_head.load(std::memory_order_acquire)) {
-                        std::this_thread::yield(); // buffer full, yield before retrying
-                    }// end if (next_tail == m_head.load(std::memory_order_acquire))
+                    // if (next_tail == m_head.load(std::memory_order_acquire)) {
+                    //     std::this_thread::yield(); // buffer full, yield before retrying
+                    // }// end if (next_tail == m_head.load(std::memory_order_acquire))
                     //--------------------------
                 } while (!m_tail.compare_exchange_weak(current_tail, next_tail, std::memory_order_release, std::memory_order_relaxed));
                 //--------------------------
@@ -215,8 +215,6 @@ namespace CircularBuffer {
                 //--------------------------
                 m_tail.store(next_tail, std::memory_order_release);
                 m_count.fetch_add(1, std::memory_order_release);
-                //--------------------------
-                // std::cout << "Pushed: " << item << ", tail: " << next_tail << ", count: " <<  m_count.load(std::memory_order_acquire) << std::endl;
                 //--------------------------
             }//end bool push_back(const T& item)
             //--------------------------
@@ -235,10 +233,6 @@ namespace CircularBuffer {
                         //--------------------------
                     }// end if (is_full())
                     //--------------------------
-                    if (next_tail == m_head.load(std::memory_order_acquire)) {
-                        std::this_thread::yield(); // buffer full, yield before retrying
-                    }//end if (next_tail == m_head.load(std::memory_order_acquire))
-                    //--------------------------
                 } while (!m_tail.compare_exchange_weak(current_tail, next_tail, std::memory_order_release, std::memory_order_relaxed));
                 //--------------------------
                 m_buffer.at(current_tail) = std::move(item);
@@ -253,8 +247,6 @@ namespace CircularBuffer {
                 //--------------------------
                 m_tail.store(next_tail, std::memory_order_release);
                 m_count.fetch_add(1, std::memory_order_release);
-                //--------------------------
-                // std::cout << "Pushed: " << m_buffer.at(current_tail) << ", tail: " << next_tail << ", count: " <<  m_count.load(std::memory_order_acquire) << std::endl;
                 //--------------------------
             }//end bool push_back(const T& item)
             //--------------------------
@@ -273,10 +265,6 @@ namespace CircularBuffer {
                         static_cast<void>(pop_front());
                         //--------------------------
                     }// end if (is_full())
-                    //--------------------------
-                    if (next_tail == m_head.load(std::memory_order_acquire)) {
-                        std::this_thread::yield(); // buffer full, yield before retrying
-                    }//end if (next_tail == m_head.load(std::memory_order_acquire))
                     //--------------------------
                 } while (!m_tail.compare_exchange_weak(current_tail, next_tail, std::memory_order_release, std::memory_order_relaxed));
                 //--------------------------
@@ -316,7 +304,7 @@ namespace CircularBuffer {
                     //--------------------------
                     if (is_empty()) {
                         //--------------------------
-                        std::this_thread::yield();
+                        // std::this_thread::yield();
                         return std::nullopt;
                         //--------------------------
                     }// end if (is_empty())
@@ -339,8 +327,6 @@ namespace CircularBuffer {
                 //--------------------------
                 m_count.fetch_sub(1, std::memory_order_relaxed);
                 //--------------------------
-                // std::cout << "Top Popped: " << value << ", head: " << next_head << ", count: " <<  m_count.load(std::memory_order_acquire) << std::endl;
-                //--------------------------
                 return value;
                 //--------------------------
             }// end std::optional<T> get_top_pop(void)
@@ -354,7 +340,7 @@ namespace CircularBuffer {
                     current_head = m_head.load(std::memory_order_acquire);
                     //--------------------------
                     if (is_empty()) {
-                        std::this_thread::yield();
+                        // std::this_thread::yield();
                         return false; // Buffer is empty, nothing to pop
                     }// end if (is_empty())
                     //--------------------------
@@ -567,11 +553,12 @@ namespace CircularBuffer {
             std::enable_if_t<std::is_floating_point<U>::value, void>
             atomic_float_add(std::atomic<U>& atomic, const R& value) {
                 //--------------------------
-                U current = atomic.load(std::memory_order_relaxed);
+                U current = atomic.load(std::memory_order_acquire);
+                U desired;
                 //--------------------------
-                while (!atomic.compare_exchange_weak(current, current + value, std::memory_order_relaxed)) {
-                    // retry
-                }//end while (!atomic.compare_exchange_weak(current, current + value, std::memory_order_relaxed))
+                do {
+                    desired = current + value;
+                } while (!atomic.compare_exchange_weak(current, desired, std::memory_order_release, std::memory_order_relaxed));
                 //--------------------------
             }//end void atomic_float_add(std::atomic<T>& atomic, const T& value)
             //--------------------------
@@ -579,11 +566,12 @@ namespace CircularBuffer {
             std::enable_if_t<std::is_floating_point<U>::value, void>
             atomic_float_sub(std::atomic<U>& atomic, const R& value) {
                 //--------------------------
-                U current = atomic.load(std::memory_order_relaxed);
+                U current = atomic.load(std::memory_order_acquire);
+                U desired;
                 //--------------------------
-                while (!atomic.compare_exchange_weak(current, current - value, std::memory_order_relaxed)) {
-                    // retry
-                }// end while (!atomic.compare_exchange_weak(current, current - value, std::memory_order_relaxed))
+                do {
+                    desired = current - value;
+                } while (!atomic.compare_exchange_weak(current, desired, std::memory_order_release, std::memory_order_relaxed));
                 //--------------------------
             }//end void atomic_float_sub(std::atomic<T>& atomic, const T& value)
             //--------------------------
