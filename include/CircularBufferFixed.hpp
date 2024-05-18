@@ -547,15 +547,15 @@ namespace CircularBuffer {
                 //--------------------------
                 if (count_ % 2UL == 0) {
                     //--------------------------
-                    const T median_1 = sorted_buffer.at(half_count_ - 1);
+                    const double median_1 = static_cast<double>(sorted_buffer.at(half_count_ - 1));
 #if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
                     std::nth_element(std::execution::par, sorted_buffer.begin() + half_count_, sorted_buffer.begin() + half_count_, sorted_buffer.begin() + count_);
 #else
                     std::nth_element(sorted_buffer.begin() + half_count_, sorted_buffer.begin() + half_count_, sorted_buffer.begin() + count_);
 #endif
-                    const T median_2 = sorted_buffer.at(half_count_);
+                    const double median_2 = static_cast<double>(sorted_buffer.at(half_count_));
                     //--------------------------
-                    return static_cast<double>(median_1 + median_2) / 2.;
+                    return (median_1 + median_2) / 2.;
                     //--------------------------
                 }//end if (count_ % 2 == 0)
                 //--------------------------
