@@ -550,7 +550,7 @@ namespace CircularBuffer {
                     return std::nullopt;
                 }// end if (m_buffer.empty())
                 //--------------------------
-                auto sorted_buffer = m_buffer;
+                auto sorted_buffer      = m_buffer;
                 const size_t size_      = sorted_buffer.size();
                 const size_t half_size_ = size_ / 2UL;
                 //--------------------------
