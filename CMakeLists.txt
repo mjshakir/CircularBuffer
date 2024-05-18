@@ -115,7 +115,7 @@ if(BUILD_CIRCULARBUFFER_MULTI_THREADING)
         message(STATUS "Multi-threading enabled with Intel TBB.")
         target_link_libraries(${PROJECT_NAME} PRIVATE TBB::tbb)
     else()
-        message(WARNING "\033[1;33mMulti-threading is enabled, but Intel TBB is not found. Compiling without multi-threading support.\033[0m")
+        message(WARNING "Multi-threading is enabled, but Intel TBB is not found. Compiling without multi-threading support.")
     endif()
 endif()
 #------------------------------------------------------------------------------------------
