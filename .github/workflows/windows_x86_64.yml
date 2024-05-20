@@ -17,20 +17,19 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
+    - name: Install vcpkg
+      run: |
+        git clone https://github.com/microsoft/vcpkg.git
+        .\vcpkg\bootstrap-vcpkg.bat
+        .\vcpkg\vcpkg.exe install tbb --triplet=x64-windows
+        echo "VCPKG_ROOT=$(pwd)/vcpkg" >> $GITHUB_ENV
+        echo "CMAKE_TOOLCHAIN_FILE=$(pwd)/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
+
     - name: Setup CMake and Ninja
       uses: lukka/get-cmake@v3.21.1
 
     - name: Setup MSVC
       uses: ilammy/msvc-dev-cmd@v1
-
-    - name: Install Intel TBB for x86
-      run: |
-        Invoke-WebRequest -Uri "https://github.com/oneapi-src/oneTBB/releases/download/v2021.7.0/oneapi-tbb-2021.7.0-win.zip" -OutFile "tbb.zip"
-        Expand-Archive -Path "tbb.zip" -DestinationPath "tbb"
-        echo "TBB_ROOT=$(pwd)/tbb/oneapi-tbb-2021.7.0" >> $GITHUB_ENV
-        echo "TBB_LIB_DIR=$(pwd)/tbb/oneapi-tbb-2021.7.0/lib/intel64/vc14" >> $GITHUB_ENV
-        echo "TBB_INCLUDE_DIR=$(pwd)/tbb/oneapi-tbb-2021.7.0/include" >> $GITHUB_ENV
-        echo "CMAKE_PREFIX_PATH=$(pwd)/tbb/oneapi-tbb-2021.7.0/cmake" >> $GITHUB_ENV
 
     - name: Check MSVC Version
       run: |
@@ -59,8 +58,7 @@ jobs:
 
     - name: Configure CMake
       if: steps.check_msvc.outputs.skip_step != 'true'
-      run: |
-        cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DBUILD_THREADPOOL_SHARED_LIBS=ON -DBUILD_CIRCULARBUFFER_MULTI_THREADING=ON -DCMAKE_PREFIX_PATH="$env:CMAKE_PREFIX_PATH"
+      run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_TOOLCHAIN_FILE="$env:CMAKE_TOOLCHAIN_FILE"
 
     - name: Build
       run: cmake --build build --config ${{ env.BUILD_TYPE }} --verbose
