@@ -454,7 +454,7 @@ void fill_buffer(T& buffer, const size_t& start, const size_t& end) {
 // Test helper function to empty the buffer
 template <typename T>
 void empty_buffer(T& buffer, const size_t& count) {
-    for (size_t i = 0; i < count; ++i) {
+    for (size_t i = 0UL; i < count; ++i) {
         buffer.pop();
     }
 }
@@ -549,7 +549,7 @@ TEST(CircularBufferDynamicTest, SingleProducerMultipleConsumers) {
         std::unique_lock<std::mutex> lock(mtx);
         cv.wait(lock, [&]() { return ready; });
 
-        while (consumed_count < items_to_produce and !buffer.empty()) {
+        while ((consumed_count < items_to_produce) and !buffer.empty()) {
             if (buffer.pop()) {
                 ++consumed_count;
             }
@@ -592,7 +592,7 @@ TEST(CircularBufferDynamicTest, MultipleProducersMultipleConsumers) {
         std::unique_lock<std::mutex> lock(mtx);
         cv.wait(lock, [&]() { return ready; });
 
-        while (consumed_count < items_to_produce and !buffer.empty()) {
+        while ((consumed_count < items_to_produce) and !buffer.empty()) {
             if (produced_count.load() > consumed_count.load() && buffer.pop()) {
                 ++consumed_count;
             }
