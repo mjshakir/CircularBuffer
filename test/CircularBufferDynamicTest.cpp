@@ -1,14 +1,24 @@
+//--------------------------------------------------------------
+// Standard cpp library
+//--------------------------------------------------------------
+#include <iostream>
 #include <thread>
 #include <vector>
 #include <atomic>
 #include <mutex>
 #include <unordered_set>
 #include <condition_variable>
+//--------------------------------------------------------------
+// GTest library
+//--------------------------------------------------------------
 #include <gtest/gtest.h>
+//--------------------------------------------------------------
+// User Defined library
+//--------------------------------------------------------------
 #include "CircularBufferDynamic.hpp"
 
 
-constexpr size_t BUFFER_SIZE = 5;
+constexpr size_t BUFFER_SIZE = 5UL;
 
 // Test basic push and pop functionality
 TEST(CircularBufferDynamicTest, PushAndPop) {
@@ -36,7 +46,7 @@ TEST(CircularBufferDynamicTest, CapacityLimits) {
 
 TEST(CircularBufferDynamicTest, BoundaryConditions) {
     CircularBuffer::CircularBufferDynamic<size_t> buffer(BUFFER_SIZE);
-    constexpr size_t buffer_size = 9;
+    constexpr size_t buffer_size = 9UL;
     for (size_t i = 0; i < buffer_size; ++i) {  // Fill buffer one less than capacity
         buffer.push(i);
     }
@@ -45,106 +55,9 @@ TEST(CircularBufferDynamicTest, BoundaryConditions) {
     EXPECT_EQ(6, buffer.top_pop().value());  // Next pop should follow the wrap-around
 }
 
-// TEST(CircularBufferDynamicTest, ConcurrencyAndOrdering) {
-//     constexpr size_t num_threads = 2;
-//     constexpr size_t per_thread_count = 10;
-//     constexpr size_t buffer_capacity = BUFFER_SIZE; // Assuming BUFFER_SIZE is 5
-//     std::vector<std::thread> producers;
-//     std::vector<size_t> pushed_elements(num_threads * per_thread_count);
-//     producers.reserve(num_threads);
-//     {
-//         for (size_t i = 0; i < num_threads; ++i) {
-//             producers.emplace_back([&, i]() {
-//                 for (size_t j = 0; j < per_thread_count; ++j) {
-//                     size_t element = i * per_thread_count + j;
-//                     buffer.push(element);
-//                     pushed_elements[i * per_thread_count + j] = element;
-//                 }
-//             });
-//         }
-
-//         for (auto& th : producers) {
-//             th.join();
-//         }
-//     }
-
-//     std::vector<size_t> final_elements;
-//     final_elements.reserve(buffer_capacity);
-//     while (!buffer.empty()) {
-//         final_elements.push_back(buffer.top_pop().value());
-//     }
-
-//     ASSERT_EQ(final_elements.size(), buffer_capacity);
-//     for (size_t i = 0; i < buffer_capacity; ++i) {
-//         size_t expected_value = pushed_elements.at(pushed_elements.size() - buffer_capacity + i);
-//         EXPECT_EQ(final_elements.at(i), expected_value) << "Mismatch at buffer index " << i;
-//     }
-// }
-
-// TEST(CircularBufferDynamicTest, MultipleProducersMultipleConsumers) {
-//     constexpr size_t numProducers = BUFFER_SIZE;
-//     constexpr size_t numConsumers = BUFFER_SIZE;
-//     constexpr size_t numOperations = 1000UL;
-//     std::vector<std::thread> producers;
-//     std::vector<std::thread> consumers;
-//     std::atomic<bool> productionDone(false);
-//     std::atomic<size_t> producedCount(0);
-//     std::atomic<size_t> consumedCount(0);
-//     std::mutex consumedValuesMutex;
-//     std::unordered_set<size_t> consumedValues;
-
-//     producers.reserve(numProducers);
-//     consumers.reserve(numConsumers);
-//     consumedValues.reserve(numProducers * numOperations);
-
-//     auto producerFunc = [&](size_t producerId) {
-//         for (size_t i = 0; i < numOperations; ++i) {
-//             size_t value = producerId * numOperations + i;
-//             buffer.push(value);
-//             producedCount++;
-//         }
-//     };
-
-//     auto consumerFunc = [&]() {
-//         while (!productionDone || !buffer.empty()) {
-//             auto value = buffer.top_pop();
-//             if (value.has_value()) {
-//                 std::lock_guard<std::mutex> lock(consumedValuesMutex);
-//                 consumedValues.insert(value.value());
-//                 consumedCount++;
-//             }
-//         }
-//     };
-
-//     // Start producers
-//     for (size_t i = 0; i < numProducers; ++i) {
-//         producers.emplace_back(producerFunc, i);
-//     }
-
-//     // Start consumers
-//     for (size_t i = 0; i < numConsumers; ++i) {
-//         consumers.emplace_back(consumerFunc);
-//     }
-
-//     // Wait for all producers to finish
-//     for (auto& producer : producers) {
-//         producer.join();
-//     }
-//     productionDone = true;  // Indicate production completion
-
-//     // Wait for all consumers to finish
-//     for (auto& consumer : consumers) {
-//         consumer.join();
-//     }
-
-//     // Check that all consumed items were unique and verify counts
-//     EXPECT_EQ(consumedValues.size(), consumedCount);
-//     EXPECT_LE(consumedValues.size(), producedCount);
-// }
-
 TEST(CircularBufferDynamicTest, StressRobustness) {
     CircularBuffer::CircularBufferDynamic<size_t> buffer(BUFFER_SIZE);
-    constexpr size_t buffer_size = 1000000;
+    constexpr size_t buffer_size = 1000000UL;
     try {
         for (size_t i = 0; i < buffer_size; ++i) {
             buffer.push(i);
@@ -157,14 +70,14 @@ TEST(CircularBufferDynamicTest, StressRobustness) {
 
 TEST(CircularBufferDynamicTest, MemoryAndResourceManagement) {
     CircularBuffer::CircularBufferDynamic<size_t> buffer(BUFFER_SIZE);
-    constexpr size_t count = 1000;
+    constexpr size_t count = 1000UL;
     // Push elements into the buffer.
     for (size_t i = 0; i < count; ++i) {
         buffer.push(i);
     }
 
     // Check if elements are popped in the correct order.
-    size_t expected = 995;
+    size_t expected = 995UL;
     while (!buffer.empty()) {
         auto popped = buffer.top_pop().value();
         EXPECT_EQ(popped, expected++) << "Mismatch at position " << expected - 1;
@@ -187,9 +100,9 @@ TEST(CircularBufferDynamicTest, WrapAround) {
 // Test thread safety by using multiple threads to push and pop concurrently
 TEST(CircularBufferDynamicTest, ExtremeStressWithThreads) {
     CircularBuffer::CircularBufferDynamic<size_t> buffer(BUFFER_SIZE);
-    constexpr size_t num_threads = 100;
-    constexpr size_t operations_per_thread = 10000;  // Each thread does 5000 pushes and 5000 pops
-    constexpr size_t buffer_capacity = BUFFER_SIZE;  // Fixed buffer size
+    constexpr size_t num_threads            = 100UL;
+    constexpr size_t operations_per_thread  = 10000UL;  // Each thread does 5000 pushes and 5000 pops
+    constexpr size_t buffer_capacity        = BUFFER_SIZE;  // Fixed buffer size
 
     std::vector<std::thread> workers;
     workers.reserve(num_threads);
@@ -244,7 +157,7 @@ TEST(CircularBufferDynamicTest, OverwriteOldEntries) {
     
     // Check capacity reached and content is as expected
     EXPECT_EQ(5, buffer.size());
-    size_t expectedValue = 1;
+    size_t expectedValue = 1UL;
     for (auto it = buffer.begin(); it != buffer.end(); ++it, ++expectedValue) {
         EXPECT_EQ(expectedValue, *it) << "Initial values in buffer are incorrect at position " << expectedValue - 1;
     }
@@ -256,7 +169,7 @@ TEST(CircularBufferDynamicTest, OverwriteOldEntries) {
 
     // Check size remains constant and content is updated
     EXPECT_EQ(5, buffer.size());
-    expectedValue = 6;
+    expectedValue = 6UL;
     auto it = buffer.begin();
     for (; expectedValue <= 10; ++expectedValue, ++it) {
         ASSERT_TRUE(it != buffer.end()) << "Iterator reached the end prematurely.";
@@ -297,7 +210,7 @@ TEST(CircularBufferDynamicTest, BasicOperations) {
 }
 
 TEST(CircularBufferDynamicTest, Overflow) {
-    CircularBuffer::CircularBufferDynamic<size_t> buffer(3);
+    CircularBuffer::CircularBufferDynamic<size_t> buffer(3UL);
     buffer.push(1);
     buffer.push(2);
     buffer.push(3);
@@ -323,7 +236,7 @@ TEST(CircularBufferDynamicTest, Reset) {
 
 
 TEST(CircularBufferDynamicTest, Emplace) {
-    CircularBuffer::CircularBufferDynamic<std::pair<int, int>> buffer(3);
+    CircularBuffer::CircularBufferDynamic<std::pair<int, int>> buffer(3UL);
     buffer.emplace(1, 2);
     buffer.emplace(3, 4);
     EXPECT_EQ(buffer.size(), 2);
@@ -387,7 +300,7 @@ TEST(CircularBufferDynamicTest, FloatStatistics) {
 }
 
 TEST(CircularBufferDynamicTest, CopyConstructor) {
-    CircularBuffer::CircularBufferDynamic<int> buffer(3);
+    CircularBuffer::CircularBufferDynamic<int> buffer(3UL);
     buffer.push(1);
     buffer.push(2);
     buffer.push(3);
@@ -445,11 +358,11 @@ TEST(CircularBufferDynamicTest, MoveAssignmentOperator) {
 }
 
 TEST(CircularBufferDynamicTest, ExtremeStressTest) {
-    CircularBuffer::CircularBufferDynamic<size_t> buffer(10);
-    for (size_t i = 0; i < 2000000; ++i) {
+    CircularBuffer::CircularBufferDynamic<size_t> buffer(10UL);
+    for (size_t i = 0; i < 2000000UL; ++i) {
         buffer.push(i);
     }
-    EXPECT_EQ(buffer.size(), 10); // Only the last 1000000 elements should be there
+    EXPECT_EQ(buffer.size(), 10UL); // Only the last 1000000 elements should be there
     EXPECT_EQ(buffer.sum().value(), 19999945); // Sum of numbers from 1999990 to 1999999
     EXPECT_DOUBLE_EQ(buffer.mean().value(), 1999994.5); // Mean of numbers from 1999990 to 1999999
     // Calculate the expected variance and standard deviation with Bessel's correction
@@ -470,13 +383,13 @@ TEST(CircularBufferDynamicTest, ExtremeStressTest) {
 }
 
 TEST(CircularBufferDynamicTest, ExtremeStressTestDouble) {
-    CircularBuffer::CircularBufferDynamic<double> buffer(10);
+    CircularBuffer::CircularBufferDynamic<double> buffer(10UL);
     for (size_t i = 0; i < 2000000; ++i) {
         buffer.push(static_cast<double>(i) + 0.5);
     }
 
     constexpr double expected_mean = 1999995.0;
-    EXPECT_EQ(buffer.size(), 10); // Only the last 10 elements should be there
+    EXPECT_EQ(buffer.size(), 10UL); // Only the last 10 elements should be there
     EXPECT_DOUBLE_EQ(buffer.sum().value(), 19999950.0); // Sum of numbers from 1999990.5 to 1999999.5
     EXPECT_DOUBLE_EQ(buffer.mean().value(), expected_mean); // Mean of numbers from 1999990.5 to 1999999.5
     // Calculate the expected variance and standard deviation with Bessel's correction
@@ -499,18 +412,18 @@ TEST(CircularBufferDynamicTest, ExtremeStressTestDouble) {
 TEST(CircularBufferDynamicTest, StressTest) {
     constexpr size_t buffer_size = 500000UL;
     CircularBuffer::CircularBufferDynamic<size_t> buffer(buffer_size);
-    for (size_t i = 0; i < 2000000; ++i) {
+    for (size_t i = 0; i < 2000000UL; ++i) {
         buffer.push(i);
     }
 
     EXPECT_EQ(buffer.size(), buffer_size); // Only the last 1000000 elements should be there
 
-    constexpr size_t start_value = 1500000UL;
-    constexpr size_t end_value = 1999999UL;
-    constexpr size_t num_elements = end_value - start_value + 1UL;
+    constexpr size_t start_value    = 1500000UL;
+    constexpr size_t end_value      = 1999999UL;
+    constexpr size_t num_elements   = end_value - start_value + 1UL;
 
-    constexpr size_t expected_sum = (num_elements * (start_value + end_value)) / 2; // Sum of numbers from 1000000 to 1999999
-    constexpr double expected_mean = (start_value + end_value) / 2.0; // Mean of numbers from 1000000 to 1999999
+    constexpr size_t expected_sum   = (num_elements * (start_value + end_value)) / 2UL; // Sum of numbers from 1000000 to 1999999
+    constexpr double expected_mean  = (start_value + end_value) / 2.; // Mean of numbers from 1000000 to 1999999
 
     EXPECT_EQ(buffer.sum().value(), expected_sum);
     EXPECT_DOUBLE_EQ(buffer.mean().value(), expected_mean);
@@ -532,7 +445,7 @@ TEST(CircularBufferDynamicTest, StressTest) {
 }
 
 template <typename T>
-void fill_buffer(T& buffer, size_t start, size_t end) {
+void fill_buffer(T& buffer, const size_t& start, const size_t& end) {
     for (size_t i = start; i < end; ++i) {
         buffer.push(i);
     }
@@ -540,18 +453,18 @@ void fill_buffer(T& buffer, size_t start, size_t end) {
 
 // Test helper function to empty the buffer
 template <typename T>
-void empty_buffer(T& buffer, size_t count) {
+void empty_buffer(T& buffer, const size_t& count) {
     for (size_t i = 0; i < count; ++i) {
         buffer.pop();
     }
 }
 
 TEST(CircularBufferDynamicTest, SingleProducerSingleConsumer) {
-    CircularBuffer::CircularBufferDynamic<size_t> buffer(100);
+    CircularBuffer::CircularBufferDynamic<size_t> buffer(100UL);
     std::atomic<bool> done(false);
 
     std::thread producer([&buffer, &done]() {
-        fill_buffer(buffer, 0, 1000);
+        fill_buffer(buffer, 0, 1000UL);
         done.store(true);
     });
 
@@ -569,9 +482,9 @@ TEST(CircularBufferDynamicTest, SingleProducerSingleConsumer) {
 
 // Multiple Producers, 1 Consumer
 TEST(CircularBufferDynamicTest, MultipleProducersSingleConsumer) {
-    CircularBuffer::CircularBufferDynamic<size_t> buffer(100);
-    std::atomic<size_t> produced_count(0);
-    constexpr size_t items_to_produce = 1000;
+    CircularBuffer::CircularBufferDynamic<size_t> buffer(100UL);
+    std::atomic<size_t> produced_count(0UL);
+    constexpr size_t items_to_produce = 1000UL;
     std::condition_variable cv;
     std::mutex mtx;
     bool ready = false;
@@ -596,7 +509,7 @@ TEST(CircularBufferDynamicTest, MultipleProducersSingleConsumer) {
         std::unique_lock<std::mutex> lock(mtx);
         cv.wait(lock, [&]() { return ready; });
 
-        while (consumed_count < items_to_produce and !buffer.empty()) {
+        while ((consumed_count < items_to_produce) and !buffer.empty()) {
             if (buffer.pop()) {
                 ++consumed_count;
             }
@@ -613,9 +526,9 @@ TEST(CircularBufferDynamicTest, MultipleProducersSingleConsumer) {
 // 1 Producer, Multiple Consumers
 TEST(CircularBufferDynamicTest, SingleProducerMultipleConsumers) {
     CircularBuffer::CircularBufferDynamic<size_t> buffer(100);
-    const size_t items_to_produce = 1000;
-    std::atomic<size_t> consumed_count(0);
-    std::atomic<size_t> produced_count(0);
+    constexpr size_t items_to_produce = 1000UL;
+    std::atomic<size_t> consumed_count(0UL);
+    std::atomic<size_t> produced_count(0UL);
     std::condition_variable cv;
     std::mutex mtx;
     bool ready = false;
@@ -655,7 +568,7 @@ TEST(CircularBufferDynamicTest, SingleProducerMultipleConsumers) {
 
 // Multiple Producers, Multiple Consumers
 TEST(CircularBufferDynamicTest, MultipleProducersMultipleConsumers) {
-    CircularBuffer::CircularBufferDynamic<size_t> buffer(100);
+    CircularBuffer::CircularBufferDynamic<size_t> buffer(100UL);
     constexpr size_t items_to_produce = 1000UL;
     std::atomic<size_t> produced_count(0UL);
     std::atomic<size_t> consumed_count(0UL);
