@@ -25,7 +25,7 @@ jobs:
 
     - name: Install TBB
       run: |
-        vcpkg install tbb:x64-windows
+        vcpkg install tbb:arm-windows
         vcpkg integrate install
 
     - name: Setup CMake and Ninja
