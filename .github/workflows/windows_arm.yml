@@ -69,7 +69,7 @@ jobs:
       if: steps.check_msvc.outputs.skip_step != 'true'
       run: |
         echo "CMAKE_TOOLCHAIN_FILE is: $env:CMAKE_TOOLCHAIN_FILE"
-        cmake -S . -B build -DBUILD_CIRCULARBUFFER_MULTI_THREADING=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="$env:CMAKE_TOOLCHAIN_FILE"
+        cmake -S . -B build -DBUILD_CIRCULARBUFFER_MULTI_THREADING=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
 
     - name: List build directory contents
       run: ls -R build/

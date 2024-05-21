@@ -65,10 +65,9 @@ jobs:
       run: .\vcpkg\vcpkg.exe list
 
     - name: Configure CMake
-      if: steps.check_msvc.outputs.skip_step != 'true'
       run: |
         echo "CMAKE_TOOLCHAIN_FILE is: $env:CMAKE_TOOLCHAIN_FILE"
-        cmake -S . -B build -DBUILD_CIRCULARBUFFER_MULTI_THREADING=ON -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_TOOLCHAIN_FILE="$env:CMAKE_TOOLCHAIN_FILE"
+        cmake -S . -B build -DBUILD_CIRCULARBUFFER_MULTI_THREADING=ON -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
 
     - name: Build
       run: cmake --build build --config ${{ env.BUILD_TYPE }} --verbose
