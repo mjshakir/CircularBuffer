@@ -422,8 +422,8 @@ TEST(CircularBufferDynamicTest, StressTest) {
 
     EXPECT_EQ(buffer.size(), buffer_size); // Only the last 1000000 elements should be there
 
-    constexpr size_t start_value    = 1500000UL;
     constexpr size_t end_value      = 1999999UL;
+    constexpr size_t start_value    = (end_value - buffer_size + 1UL);
     constexpr size_t num_elements   = end_value - start_value + 1UL;
 
     constexpr size_t expected_sum   = (num_elements * (start_value + end_value)) / 2UL; // Sum of numbers from 1000000 to 1999999
