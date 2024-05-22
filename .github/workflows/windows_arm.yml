@@ -74,14 +74,22 @@ jobs:
     #     cd ..
     #   shell: pwsh
 
+    # - name: Install TBB From Source
+    #   run: |
+    #     git clone https://github.com/oneapi-src/oneTBB.git
+    #     cd oneTBB
+    #     cmake -G "Visual Studio 17 2022" -A arm -DCMAKE_C_COMPILER="C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.29.30037/bin/Hostx64/arm/cl.exe" -DCMAKE_CXX_COMPILER="C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.29.30037/bin/Hostx64/arm/cl.exe" -DCMAKE_EXE_LINKER_FLAGS="/SAFESEH:NO" -DCMAKE_SHARED_LINKER_FLAGS="/SAFESEH:NO" -DCMAKE_C_FLAGS="/SAFESEH:NO" -DCMAKE_CXX_FLAGS="/SAFESEH:NO" -S . -B build
+    #     cmake --build build --config Release
+    #     cd ..
+    #   shell: pwsh
+
     - name: Install TBB From Source
       run: |
         git clone https://github.com/oneapi-src/oneTBB.git
-        cd oneTBB
-        cmake -G "Visual Studio 17 2022" -A arm -DCMAKE_C_COMPILER="C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.29.30037/bin/Hostx64/arm/cl.exe" -DCMAKE_CXX_COMPILER="C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.29.30037/bin/Hostx64/arm/cl.exe" -DCMAKE_EXE_LINKER_FLAGS="/SAFESEH:NO" -DCMAKE_SHARED_LINKER_FLAGS="/SAFESEH:NO" -DCMAKE_C_FLAGS="/SAFESEH:NO" -DCMAKE_CXX_FLAGS="/SAFESEH:NO" -S . -B build
+        cmake -G "Visual Studio 17 2022" -A arm -S . -B build -DCMAKE_PROJECT_INCLUDE=./CMakeLists-custom.txt
         cmake --build build --config Release
-        cd ..
       shell: pwsh
+
 
     # - name: Verify vcpkg Installation
     #   run: .\vcpkg\vcpkg.exe list
