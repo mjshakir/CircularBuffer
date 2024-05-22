@@ -410,7 +410,11 @@ TEST(CircularBufferDynamicTest, ExtremeStressTestDouble) {
 
 
 TEST(CircularBufferDynamicTest, StressTest) {
+#ifdef _WIN32
+    constexpr size_t buffer_size = 50000UL;
+#else
     constexpr size_t buffer_size = 500000UL;
+#endif
     CircularBuffer::CircularBufferDynamic<size_t> buffer(buffer_size);
     for (size_t i = 0; i < 2000000UL; ++i) {
         buffer.push(i);

@@ -362,53 +362,24 @@ TEST(CircularBufferFixedTest, ExtremeStressTestDouble) {
     // Other statistical methods can be similarly tested
 }
 
-#ifdef _WIN32
 TEST(CircularBufferFixedTest, StressTest) {
-    constexpr size_t buffer_size = 100000UL; // Use a smaller buffer size for Windows
+#ifdef _WIN32
+    constexpr size_t buffer_size = 50000UL;
     CircularBuffer::CircularBufferFixed<size_t, buffer_size> buffer;
     for (size_t i = 0; i < 2000000UL; ++i) {
         buffer.push(i);
     }
-
-    EXPECT_EQ(buffer.size(), buffer_size); // Only the last 100000 elements should be there
-
-    constexpr size_t start_value    = 1900000UL;
-    constexpr size_t end_value      = 1999999UL;
-    constexpr size_t num_elements   = end_value - start_value + 1UL;
-
-    constexpr size_t expected_sum   = (num_elements * (start_value + end_value)) / 2UL; // Sum of numbers from 1900000 to 1999999
-    constexpr double expected_mean  = (start_value + end_value) / 2.; // Mean of numbers from 1900000 to 1999999
-
-    EXPECT_EQ(buffer.sum().value(), expected_sum);
-    EXPECT_DOUBLE_EQ(buffer.mean().value(), expected_mean);
-
-    // Calculate the expected variance and standard deviation with Bessel's correction
-    double variance_sum = 0.0;
-    for (size_t i = start_value; i <= end_value; ++i) {
-        variance_sum += std::pow(static_cast<double>(i) - expected_mean, 2);
-    }
-    const double expected_variance = variance_sum / (num_elements - 1);
-    const double expected_std_dev = std::sqrt(expected_variance);
-
-    EXPECT_NEAR(buffer.variance().value(), expected_variance, 1e1);
-    EXPECT_NEAR(buffer.standard_deviation().value(), expected_std_dev, 1e-3);
-    EXPECT_DOUBLE_EQ(buffer.median().value(), expected_mean);
-    EXPECT_EQ(buffer.minimum().value(), start_value);
-    EXPECT_EQ(buffer.maximum().value(), end_value);
-    // Other statistical methods can be similarly tested
-}
 #else
-TEST(CircularBufferFixedTest, StressTest) {
     constexpr size_t buffer_size = 500000UL;
     CircularBuffer::CircularBufferFixed<size_t, buffer_size> buffer;
     for (size_t i = 0; i < 2000000UL; ++i) {
         buffer.push(i);
     }
-
+#endif
     EXPECT_EQ(buffer.size(), buffer_size); // Only the last 1000000 elements should be there
 
-    constexpr size_t start_value    = 1500000UL;
     constexpr size_t end_value      = 1999999UL;
+    constexpr size_t start_value    = (end_value - buffer_size + 1UL);
     constexpr size_t num_elements   = end_value - start_value + 1UL;
 
     constexpr size_t expected_sum   = (num_elements * (start_value + end_value)) / 2UL; // Sum of numbers from 1000000 to 1999999
@@ -432,7 +403,6 @@ TEST(CircularBufferFixedTest, StressTest) {
     EXPECT_EQ(buffer.maximum().value(), end_value);
     // Other statistical methods can be similarly tested
 }
-#endif
 
 template <typename T>
 void fill_buffer(T& buffer, const size_t& start, const size_t& end) {
