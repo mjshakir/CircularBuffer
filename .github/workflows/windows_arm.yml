@@ -28,15 +28,6 @@ jobs:
     #     vcpkg install tbb:arm64-windows
     #     vcpkg integrate install
 
-    - name: Install TBB From Source
-      run: |
-        git clone https://github.com/oneapi-src/oneTBB.git
-        cd oneTBB
-        cmake -G "Visual Studio 17 2022" -A arm -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/toolchain_windows_arm.cmake -S . -B build
-        cmake --build build --config Release
-        cd ..
-      shell: pwsh
-
     - name: Setup CMake and Ninja
       uses: lukka/get-cmake@v3.21.1
 
@@ -70,6 +61,18 @@ jobs:
     - name: Create build directory
       if: steps.check_msvc.outputs.skip_step != 'true'
       run: mkdir build
+
+    - name: Set up environment variable for toolchain file
+      run: echo "TOOLCHAIN_FILE=${{ github.workspace }}/toolchain_windows_arm.cmake" >> $GITHUB_ENV
+
+    - name: Install TBB From Source
+      run: |
+        git clone https://github.com/oneapi-src/oneTBB.git
+        cd oneTBB
+        cmake -G "Visual Studio 17 2022" -A arm -DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN_FILE -S . -B build
+        cmake --build build --config Release
+        cd ..
+      shell: pwsh
 
     # - name: Verify vcpkg Installation
     #   run: .\vcpkg\vcpkg.exe list
