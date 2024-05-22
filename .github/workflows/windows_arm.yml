@@ -15,27 +15,27 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Install vcpkg
-      run: |
-        git clone https://github.com/microsoft/vcpkg.git
-        .\vcpkg\bootstrap-vcpkg.bat
-        .\vcpkg\vcpkg.exe install tbb --triplet=arm64-windows
-        echo "VCPKG_ROOT=$(pwd)/vcpkg" >> $GITHUB_ENV
-        echo "CMAKE_TOOLCHAIN_FILE=$(pwd)/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
-
-    - name: Install TBB
-      run: |
-        vcpkg install tbb:arm64-windows
-        vcpkg integrate install
-
-    # - name: Install dependencies
+    # - name: Install vcpkg
     #   run: |
-    #    git clone https://github.com/oneapi-src/oneTBB.git
-    #     cd oneTBB
-    #     cmake -G "Visual Studio 17 2022" -A arm -S . -B build
-    #     cmake - -build build --config Release
-    #     cd ..
-    #   shell: pwsh
+    #     git clone https://github.com/microsoft/vcpkg.git
+    #     .\vcpkg\bootstrap-vcpkg.bat
+    #     .\vcpkg\vcpkg.exe install tbb --triplet=arm64-windows
+    #     echo "VCPKG_ROOT=$(pwd)/vcpkg" >> $GITHUB_ENV
+    #     echo "CMAKE_TOOLCHAIN_FILE=$(pwd)/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
+
+    # - name: Install TBB
+    #   run: |
+    #     vcpkg install tbb:arm64-windows
+    #     vcpkg integrate install
+
+    - name: Install dependencies
+      run: |
+        git clone https://github.com/oneapi-src/oneTBB.git
+        cd oneTBB
+        cmake -G "Visual Studio 17 2022" -A arm -S . -B build
+        cmake --build build --config Release
+        cd ..
+      shell: pwsh
 
     - name: Setup CMake and Ninja
       uses: lukka/get-cmake@v3.21.1
@@ -74,17 +74,17 @@ jobs:
     - name: Verify vcpkg Installation
       run: .\vcpkg\vcpkg.exe list
 
-    - name: Configure CMake
-      if: steps.check_msvc.outputs.skip_step != 'true'
-      run: |
-        echo "CMAKE_TOOLCHAIN_FILE is: $env:CMAKE_TOOLCHAIN_FILE"
-        cmake -S . -B build -DBUILD_CIRCULARBUFFER_MULTI_THREADING=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
-
     # - name: Configure CMake
     #   if: steps.check_msvc.outputs.skip_step != 'true'
     #   run: |
     #     echo "CMAKE_TOOLCHAIN_FILE is: $env:CMAKE_TOOLCHAIN_FILE"
-    #     cmake -S . -B build -DBUILD_CIRCULARBUFFER_MULTI_THREADING=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DTBB_DIR=./oneTBB/build
+    #     cmake -S . -B build -DBUILD_CIRCULARBUFFER_MULTI_THREADING=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+
+    - name: Configure CMake
+      if: steps.check_msvc.outputs.skip_step != 'true'
+      run: |
+        echo "CMAKE_TOOLCHAIN_FILE is: $env:CMAKE_TOOLCHAIN_FILE"
+        cmake -S . -B build -DBUILD_CIRCULARBUFFER_MULTI_THREADING=ON -DCMAKE_BUILD_TYPE=Release -DTBB_DIR=./oneTBB/build
 
     - name: List build directory contents
       run: ls -R build/
