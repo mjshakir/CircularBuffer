@@ -15,18 +15,18 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    # - name: Install vcpkg
-    #   run: |
-    #     git clone https://github.com/microsoft/vcpkg.git
-    #     .\vcpkg\bootstrap-vcpkg.bat
-    #     .\vcpkg\vcpkg.exe install tbb --triplet=arm64-windows
-    #     echo "VCPKG_ROOT=$(pwd)/vcpkg" >> $GITHUB_ENV
-    #     echo "CMAKE_TOOLCHAIN_FILE=$(pwd)/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
+    - name: Install vcpkg
+      run: |
+        git clone https://github.com/microsoft/vcpkg.git
+        .\vcpkg\bootstrap-vcpkg.bat
+        .\vcpkg\vcpkg.exe install tbb --triplet=arm64-windows
+        echo "VCPKG_ROOT=$(pwd)/vcpkg" >> $GITHUB_ENV
+        echo "CMAKE_TOOLCHAIN_FILE=$(pwd)/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
 
-    # - name: Install TBB
-    #   run: |
-    #     vcpkg install tbb:arm64-windows
-    #     vcpkg integrate install
+    - name: Install TBB
+      run: |
+        vcpkg install tbb:arm64-windows
+        vcpkg integrate install
 
     - name: Setup CMake and Ninja
       uses: lukka/get-cmake@v3.21.1
@@ -58,83 +58,18 @@ jobs:
       shell: pwsh
       id: check_msvc
 
-    # - name: Create build directory
-    #   if: steps.check_msvc.outputs.skip_step != 'true'
-    #   run: mkdir build
+    - name: Create build directory
+      if: steps.check_msvc.outputs.skip_step != 'true'
+      run: mkdir build
 
-    # - name: Set up environment variable for toolchain file
-    #   run: echo "TOOLCHAIN_FILE=${{ github.workspace }}/toolchain_windows_arm.cmake" >> $GITHUB_ENV
-
-    # - name: Install TBB From Source
-    #   run: |
-    #     git clone https://github.com/oneapi-src/oneTBB.git
-    #     cd oneTBB
-    #     cmake -G "Visual Studio 17 2022" -A arm -DCMAKE_TOOLCHAIN_FILE=$TOOLCHAIN_FILE -S . -B build
-    #     cmake --build build --config Release
-    #     cd ..
-    #   shell: pwsh
-
-    # - name: Install TBB From Source
-    #   run: |
-    #     git clone https://github.com/oneapi-src/oneTBB.git
-    #     cd oneTBB
-    #     cmake -G "Visual Studio 17 2022" -A arm -DCMAKE_C_COMPILER="C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.29.30037/bin/Hostx64/arm/cl.exe" -DCMAKE_CXX_COMPILER="C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.29.30037/bin/Hostx64/arm/cl.exe" -DCMAKE_EXE_LINKER_FLAGS="/SAFESEH:NO" -DCMAKE_SHARED_LINKER_FLAGS="/SAFESEH:NO" -DCMAKE_C_FLAGS="/SAFESEH:NO" -DCMAKE_CXX_FLAGS="/SAFESEH:NO" -S . -B build
-    #     cmake --build build --config Release
-    #     cd ..
-    #   shell: pwsh
-
-    # - name: Install TBB From Source
-    #   run: |
-    #     git clone https://github.com/oneapi-src/oneTBB.git
-    #     cd oneTBB
-    #     cmake -G "Visual Studio 17 2022" -A arm `
-    #       -DCMAKE_C_COMPILER="C:/Program Files/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.29.30037/bin/Hostx64/arm/cl.exe" `
-    #       -DCMAKE_CXX_COMPILER="C:/Program Files/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.29.30037/bin/Hostx64/arm/cl.exe" `
-    #       -DCMAKE_C_FLAGS="/SAFESEH:NO" `
-    #       -DCMAKE_CXX_FLAGS="/SAFESEH:NO" `
-    #       -DCMAKE_EXE_LINKER_FLAGS="/SAFESEH:NO" `
-    #       -DCMAKE_SHARED_LINKER_FLAGS="/SAFESEH:NO" `
-    #       -S . -B build
-    #     cmake --build build --config Release
-    #     cd ..
-    #   shell: pwsh
-
-
-    - name: Set environment variables for linker flags
-      run: |
-        echo "CMAKE_C_FLAGS=/SAFESEH:NO" >> $GITHUB_ENV
-        echo "CMAKE_CXX_FLAGS=/SAFESEH:NO" >> $GITHUB_ENV
-        echo "CMAKE_EXE_LINKER_FLAGS=/SAFESEH:NO" >> $GITHUB_ENV
-        echo "CMAKE_SHARED_LINKER_FLAGS=/SAFESEH:NO" >> $GITHUB_ENV
-
-    - name: Install TBB From Source
-      run: |
-        git clone https://github.com/oneapi-src/oneTBB.git
-        cd oneTBB
-        cmake -G "Visual Studio 17 2022" -A arm `
-          -DCMAKE_C_COMPILER="C:/Program Files/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.29.30037/bin/Hostx64/arm/cl.exe" `
-          -DCMAKE_CXX_COMPILER="C:/Program Files/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.29.30037/bin/Hostx64/arm/cl.exe" `
-          -S . -B build
-        cmake --build build --config Release
-        cd ..
-      shell: pwsh
-
-
-
-    # - name: Verify vcpkg Installation
-    #   run: .\vcpkg\vcpkg.exe list
-
-    # - name: Configure CMake
-    #   if: steps.check_msvc.outputs.skip_step != 'true'
-    #   run: |
-    #     echo "CMAKE_TOOLCHAIN_FILE is: $env:CMAKE_TOOLCHAIN_FILE"
-    #     cmake -S . -B build -DBUILD_CIRCULARBUFFER_MULTI_THREADING=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+    - name: Verify vcpkg Installation
+      run: .\vcpkg\vcpkg.exe list
 
     - name: Configure CMake
       if: steps.check_msvc.outputs.skip_step != 'true'
       run: |
         echo "CMAKE_TOOLCHAIN_FILE is: $env:CMAKE_TOOLCHAIN_FILE"
-        cmake -S . -B build -DBUILD_CIRCULARBUFFER_MULTI_THREADING=ON -DCMAKE_BUILD_TYPE=Release -DTBB_DIR=./oneTBB/build
+        cmake -S . -B build -DBUILD_CIRCULARBUFFER_MULTI_THREADING=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
 
     - name: List build directory contents
       run: ls -R build/
