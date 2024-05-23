@@ -26,6 +26,9 @@ jobs:
     - name: Install Google Test
       run: brew install googletest
 
+    - name: Install cmake and tbb
+      run: brew install cmake tbb
+
     - name: Setup CMake and Ninja
       uses: lukka/get-cmake@v3.21.1
 
