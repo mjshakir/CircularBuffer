@@ -42,6 +42,7 @@ jobs:
       run: cmake --build build --config Release
 
     - name: Test with Retry
+      working-directory: build
       run: |
         max_retries=10
         attempt=1
@@ -50,14 +51,12 @@ jobs:
           ctest --output-on-failure -C Release
           if [ $? -eq 0 ]; then
             echo "Tests passed on attempt $attempt"
-            break
+            exit 0
           else
             echo "Tests failed on attempt $attempt"
           fi
           attempt=$((attempt + 1))
+          sleep 1
         done
-        if [ $attempt -gt $max_retries ]; then
-          echo "All $max_retries attempts failed"
-          exit 1
-        fi
-      working-directory: build
+        echo "All $max_retries attempts failed"
+        exit 1
