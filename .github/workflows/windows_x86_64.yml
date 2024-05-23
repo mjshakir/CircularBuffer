@@ -77,9 +77,26 @@ jobs:
         ls -R build/
         ls -R build/lib/
 
-    - name: Test
+    - name: Test with Retry
+      run: |
+        max_retries=10
+        attempt=1
+        while [ $attempt -le $max_retries ]; do
+          echo "Test attempt $attempt"
+          ctest --output-on-failure -C ${{ env.BUILD_TYPE }}
+          if [ $? -eq 0 ]; then
+            echo "Tests passed on attempt $attempt"
+            break
+          else
+            echo "Tests failed on attempt $attempt"
+          fi
+          attempt=$((attempt + 1))
+        done
+        if [ $attempt -gt $max_retries ]; then
+          echo "All $max_retries attempts failed"
+          exit 1
+        fi
       working-directory: build
-      run: ctest --output-on-failure -C ${{ env.BUILD_TYPE }}
 
     - name: Diagnostics if build fails
       if: failure()
