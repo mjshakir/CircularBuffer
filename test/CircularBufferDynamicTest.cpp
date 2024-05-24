@@ -484,7 +484,6 @@ TEST(CircularBufferDynamicTest, SingleProducerSingleConsumer) {
     EXPECT_TRUE(buffer.empty());
 }
 
-#ifndef _WIN32
 // Multiple Producers, 1 Consumer
 TEST(CircularBufferDynamicTest, MultipleProducersSingleConsumer) {
     CircularBuffer::CircularBufferDynamic<size_t> buffer(100UL);
@@ -527,7 +526,6 @@ TEST(CircularBufferDynamicTest, MultipleProducersSingleConsumer) {
 
     EXPECT_TRUE(buffer.empty());
 }
-#endif
 
 // 1 Producer, Multiple Consumers
 TEST(CircularBufferDynamicTest, SingleProducerMultipleConsumers) {

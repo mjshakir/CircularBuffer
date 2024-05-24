@@ -440,7 +440,6 @@ TEST(CircularBufferFixedTest, SingleProducerSingleConsumer) {
     EXPECT_TRUE(buffer.empty());
 }
 
-#ifndef _WIN32
 // Multiple Producers, 1 Consumer
 TEST(CircularBufferFixedTest, MultipleProducersSingleConsumer) {
     CircularBuffer::CircularBufferFixed<size_t, 100UL> buffer;
@@ -483,7 +482,6 @@ TEST(CircularBufferFixedTest, MultipleProducersSingleConsumer) {
 
     EXPECT_TRUE(buffer.empty());
 }
-#endif
 
 // 1 Producer, Multiple Consumers
 TEST(CircularBufferFixedTest, SingleProducerMultipleConsumers) {
