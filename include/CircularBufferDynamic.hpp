@@ -114,6 +114,9 @@ namespace CircularBuffer {
             }// end void emplace(Args&&... args)
             //--------------------------
             bool pop(void) {
+                //--------------------------
+                std::unique_lock<std::mutex> lock(m_mutex);
+                //--------------------------
                 return pop_front();
             }// end void pop(void)
             //--------------------------
@@ -258,15 +261,7 @@ namespace CircularBuffer {
                 //--------------------------
                 if (m_buffer.size() == m_max_size) {
                     //--------------------------
-                    if constexpr (std::is_arithmetic<T>::value){
-                        //--------------------------
-                        const T& front_ = m_buffer.front();
-                        m_sum -= front_;
-                        m_sum_squares -= std::pow(front_, 2);
-                        //--------------------------
-                    }// end if constexpr (std::is_arithmetic<T>::value)
-                    //--------------------------
-                    static_cast<void>(m_buffer.pop_front());
+                    static_cast<void>(pop_front());
                     //--------------------------
                 }// end if (m_buffer.size() == m_max_size)
                 //--------------------------
@@ -287,15 +282,7 @@ namespace CircularBuffer {
                 //--------------------------
                 if (m_buffer.size() == m_max_size) {
                     //--------------------------
-                    if constexpr (std::is_arithmetic<T>::value){
-                        //--------------------------
-                        const T& front_ = m_buffer.front();
-                        m_sum -= front_;
-                        m_sum_squares -= std::pow(front_, 2);
-                        //--------------------------
-                    }// end if constexpr (std::is_arithmetic<T>::value)
-                    //--------------------------
-                    static_cast<void>(m_buffer.pop_front());
+                    static_cast<void>(pop_front());
                     //--------------------------
                 }// end if (m_buffer.size() == m_max_size)
                 //--------------------------
@@ -318,15 +305,7 @@ namespace CircularBuffer {
                 //--------------------------
                 if (m_buffer.size() == m_max_size) {
                     //--------------------------
-                    if constexpr (std::is_arithmetic<T>::value){
-                        //--------------------------
-                        const T& front_ = m_buffer.front();
-                        m_sum -= front_;
-                        m_sum_squares -= std::pow(front_, 2);
-                        //--------------------------
-                    }// end if constexpr (std::is_arithmetic<T>::value)
-                    //--------------------------
-                    static_cast<void>(m_buffer.pop_front());
+                    static_cast<void>(pop_front());
                     //--------------------------
                 }//end if (m_buffer.size() == m_max_size)
                 //--------------------------
@@ -377,8 +356,6 @@ namespace CircularBuffer {
             }// end T get_top(void)
             //--------------------------
             bool pop_front(void)  {
-                //--------------------------
-                std::unique_lock<std::mutex> lock(m_mutex);
                 //--------------------------
                 if (m_buffer.empty()) {
                     return false;
