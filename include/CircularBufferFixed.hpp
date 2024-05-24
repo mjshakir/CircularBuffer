@@ -363,6 +363,7 @@ namespace CircularBuffer {
             bool is_full(void) const {
                 return m_count.load(std::memory_order_acquire) == N;
             }// end bool is_full() const
+            //--------------------------
             size_t get_size(void) const  {
                 //--------------------------
                 return m_count.load(std::memory_order_acquire);
@@ -372,9 +373,11 @@ namespace CircularBuffer {
             void clear(void)  {
                 //--------------------------
                 while (!is_empty()) {
+                    //--------------------------
                     if(!pop_front()){
                         break;
-                    }
+                    }//end if(!pop_front())
+                    //--------------------------
                 }// end while (!is_empty())
                 //--------------------------
             }// end void clear(void)
