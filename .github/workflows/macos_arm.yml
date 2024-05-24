@@ -52,7 +52,8 @@ jobs:
         while [ $attempt -le $max_retries ]; do
           echo "Test attempt $attempt"
           ctest --output-on-failure -C Release
-          if [ $? -eq 0 ]; then
+          test_result=$?
+          if [ $test_result -eq 0 ]; then
             echo "Tests passed on attempt $attempt"
             exit 0
           else
