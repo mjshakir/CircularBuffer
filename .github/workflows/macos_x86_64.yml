@@ -47,6 +47,7 @@ jobs:
     - name: Test with Retry
       working-directory: build
       run: |
+        set +e  # Disable exit on error
         max_retries=10
         attempt=1
         while [ $attempt -le $max_retries ]; do
