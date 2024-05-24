@@ -201,10 +201,6 @@ namespace CircularBuffer {
                         //--------------------------
                     }// end if (is_full())
                     //--------------------------
-                    // if (next_tail == m_head.load(std::memory_order_acquire)) {
-                    //     std::this_thread::yield(); // buffer full, yield before retrying
-                    // }// end if (next_tail == m_head.load(std::memory_order_acquire))
-                    //--------------------------
                 } while (!m_tail.compare_exchange_weak(current_tail, next_tail, std::memory_order_release, std::memory_order_relaxed));
                 //--------------------------
                 m_buffer.at(current_tail) = item;
@@ -239,9 +235,7 @@ namespace CircularBuffer {
                 //--------------------------
                 if constexpr (std::is_arithmetic<T>::value){
                     //--------------------------
-                    const T current_item_ = m_buffer.at(current_tail);
-                    //--------------------------
-                    atomic_add(current_item_);
+                    atomic_add(m_buffer.at(current_tail));
                     //--------------------------
                 }//end if constexpr (std::is_arithmetic<T>::value)
                 //--------------------------
@@ -272,9 +266,7 @@ namespace CircularBuffer {
                 //--------------------------
                 if constexpr (std::is_arithmetic<T>::value){
                     //--------------------------
-                    const T current_item_ = m_buffer.at(current_tail);
-                    //--------------------------
-                    atomic_add(current_item_);
+                    atomic_add(m_buffer.at(current_tail));
                     //--------------------------
                 }//end if constexpr (std::is_arithmetic<T>::value)
                 //--------------------------
@@ -288,9 +280,7 @@ namespace CircularBuffer {
                     return std::nullopt;
                 }// end if (is_empty())
                 //--------------------------
-                size_t current_head = m_head.load(std::memory_order_acquire);
-                //--------------------------
-                return m_buffer.at(current_head);
+                return m_buffer.at(m_head.load(std::memory_order_acquire));
                 //--------------------------
             }//end std::optional<T> get_top(void)
             //--------------------------
@@ -304,7 +294,6 @@ namespace CircularBuffer {
                     //--------------------------
                     if (is_empty()) {
                         //--------------------------
-                        // std::this_thread::yield();
                         return std::nullopt;
                         //--------------------------
                     }// end if (is_empty())
@@ -340,7 +329,6 @@ namespace CircularBuffer {
                     current_head = m_head.load(std::memory_order_acquire);
                     //--------------------------
                     if (is_empty()) {
-                        // std::this_thread::yield();
                         return false; // Buffer is empty, nothing to pop
                     }// end if (is_empty())
                     //--------------------------
@@ -352,9 +340,7 @@ namespace CircularBuffer {
                 //--------------------------
                 if constexpr (std::is_arithmetic<T>::value){
                     //--------------------------
-                    const T old_item_ = m_buffer.at(current_head);
-                    //--------------------------
-                    atomic_sub(old_item_);
+                    atomic_sub(m_buffer.at(current_head);
                     //--------------------------
                 }//end if constexpr (std::is_arithmetic<T>::value)
                 //--------------------------
