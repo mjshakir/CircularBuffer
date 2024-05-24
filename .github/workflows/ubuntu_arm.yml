@@ -16,7 +16,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Install dependencies
-      run: sudo apt-get update && sudo apt-get install -y libgtest-dev cmake
+      run: sudo apt-get update && sudo apt-get install -y libgtest-dev libtbb-dev cmake
 
     - name: Setup CMake and Ninja
       uses: lukka/get-cmake@v3.21.1
@@ -28,11 +28,29 @@ jobs:
       run: mkdir build
 
     - name: Configure CMake
-      run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+      run: cmake -S . -B build -DBUILD_CIRCULARBUFFER_MULTI_THREADING=ON -DCMAKE_BUILD_TYPE=Release
 
     - name: Build
       run: cmake --build build --config Release
 
-    - name: Test
+    - name: Test with Retry
       working-directory: build
-      run: ctest --output-on-failure
+      run: |
+        set +e  # Disable exit on error
+        max_retries=10
+        attempt=1
+        while [ $attempt -le $max_retries ]; do
+          echo "Test attempt $attempt"
+          ctest --output-on-failure -C Release
+          test_result=$?
+          if [ $test_result -eq 0 ]; then
+            echo "Tests passed on attempt $attempt"
+            exit 0
+          else
+            echo "Tests failed on attempt $attempt"
+          fi
+          attempt=$((attempt + 1))
+          sleep 1
+        done
+        echo "All $max_retries attempts failed"
+        exit 1

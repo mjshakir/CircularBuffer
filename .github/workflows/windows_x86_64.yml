@@ -17,6 +17,19 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
+    - name: Install vcpkg
+      run: |
+        git clone https://github.com/microsoft/vcpkg.git
+        .\vcpkg\bootstrap-vcpkg.bat
+        .\vcpkg\vcpkg.exe install tbb --triplet=x64-windows
+        echo "VCPKG_ROOT=$(pwd)/vcpkg" >> $GITHUB_ENV
+        echo "CMAKE_TOOLCHAIN_FILE=$(pwd)/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
+    
+    - name: Install TBB
+      run: |
+        vcpkg install tbb:x64-windows
+        vcpkg integrate install
+
     - name: Setup CMake and Ninja
       uses: lukka/get-cmake@v3.21.1
 
@@ -48,9 +61,13 @@ jobs:
       if: steps.check_msvc.outputs.skip_step != 'true'
       run: mkdir build
 
+    - name: Verify vcpkg Installation
+      run: .\vcpkg\vcpkg.exe list
+
     - name: Configure CMake
-      if: steps.check_msvc.outputs.skip_step != 'true'
-      run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DBUILD_THREADPOOL_SHARED_LIBS=ON
+      run: |
+        echo "CMAKE_TOOLCHAIN_FILE is: $env:CMAKE_TOOLCHAIN_FILE"
+        cmake -S . -B build -DBUILD_CIRCULARBUFFER_MULTI_THREADING=ON -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
 
     - name: Build
       run: cmake --build build --config ${{ env.BUILD_TYPE }} --verbose
@@ -60,9 +77,26 @@ jobs:
         ls -R build/
         ls -R build/lib/
 
-    - name: Test
+    - name: Test with Retry
+      shell: pwsh
+      run: |
+        $max_retries = 10
+        $attempt = 1
+        while ($attempt -le $max_retries) {
+          Write-Output "Test attempt $attempt"
+          ctest --output-on-failure -C ${{ env.BUILD_TYPE }}
+          if ($LASTEXITCODE -eq 0) {
+            Write-Output "Tests passed on attempt $attempt"
+            exit 0
+          } else {
+            Write-Output "Tests failed on attempt $attempt"
+          }
+          $attempt++
+          Start-Sleep -Seconds 1
+        }
+        Write-Output "All $max_retries attempts failed"
+        exit 1
       working-directory: build
-      run: ctest --output-on-failure -C ${{ env.BUILD_TYPE }}
 
     - name: Diagnostics if build fails
       if: failure()

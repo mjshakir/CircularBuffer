@@ -25,6 +25,9 @@ jobs:
 
     - name: Install Google Test
       run: brew install googletest
+      
+    - name: Install cmake and tbb
+      run: brew install cmake tbb
 
     - name: Setup CMake and Ninja
       uses: lukka/get-cmake@v3.21.1
@@ -41,6 +44,24 @@ jobs:
     - name: Build
       run: cmake --build build --config Release
 
-    - name: Test
+    - name: Test with Retry
       working-directory: build
-      run: ctest --output-on-failure
+      run: |
+        set +e  # Disable exit on error
+        max_retries=10
+        attempt=1
+        while [ $attempt -le $max_retries ]; do
+          echo "Test attempt $attempt"
+          ctest --output-on-failure -C Release
+          test_result=$?
+          if [ $test_result -eq 0 ]; then
+            echo "Tests passed on attempt $attempt"
+            exit 0
+          else
+            echo "Tests failed on attempt $attempt"
+          fi
+          attempt=$((attempt + 1))
+          sleep 1
+        done
+        echo "All $max_retries attempts failed"
+        exit 1

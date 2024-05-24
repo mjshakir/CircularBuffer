@@ -33,7 +33,6 @@ if(CIRCULARBUFFER_STANDALONE_PROJECT)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-    # message(STATUS "Library output directory: ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
     # Optionally, to set these directories only for specific build configurations (Debug, Release, etc.),
     # you can use the following approach:
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin)
@@ -42,7 +41,6 @@ if(CIRCULARBUFFER_STANDALONE_PROJECT)
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/lib)
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/lib)
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/lib)
-    message(STATUS "Library output directory: ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
     # Diagnostic output
     message(STATUS "ARCHIVE_OUTPUT_DIRECTORY: ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
     message(STATUS "LIBRARY_OUTPUT_DIRECTORY: ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
@@ -53,6 +51,8 @@ endif()
 option(BUILD_CIRCULARBUFFER_SHARED_LIBS "Build using shared libraries" ON)
 option(BUILD_CIRCULARBUFFER_EXAMPLE "Build CircularBuffer example" ${CIRCULARBUFFER_STANDALONE_PROJECT})
 option(BUILD_CIRCULARBUFFER_TESTS "Build CircularBuffer tests" ${CIRCULARBUFFER_STANDALONE_PROJECT})
+option(BUILD_CIRCULARBUFFER_MULTI_THREADING "Enable multi-threading support." OFF)
+set(HAS_TBB OFF CACHE BOOL "Set to TRUE if TBB is found, otherwise FALSE")
 #------------------------------------------------------------------------------------------
 # Force colored output
 option(FORCE_COLORED_OUTPUT "Always produce ANSI-colored output (GNU/Clang only)." OFF)
@@ -68,6 +68,15 @@ endif()
 set(CIRCULARBUFFER_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(CIRCULARBUFFER_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 #------------------------------------------------------------------------------------------
+# Find TBB
+find_package(TBB QUIET)
+if(TBB_FOUND)
+    set(HAS_TBB ON)
+    message(STATUS "Intel TBB found: ${TBB_VERSION}")
+else()
+    set(HAS_TBB OFF)
+endif()
+#------------------------------------------------------------------------------------------
 # Define the source files
 set(CIRCULARBUFFER_SOURCES
     ${CIRCULARBUFFER_SOURCE_DIR}/CircularBufferFixed.cpp
@@ -75,8 +84,6 @@ set(CIRCULARBUFFER_SOURCES
     ${CIRCULARBUFFER_SOURCE_DIR}/CircularBuffer.cpp
 )
 #------------------------------------------------------------------------------------------
-# Define the CircularBuffer library target
-#set(CIRCULARBUFFER_LIBRARY_NAME "${CIRCULARBUFFER_PROJECT_NAME}_lib")
 # Check if the library should be built as a shared library
 if(BUILD_CIRCULARBUFFER_SHARED_LIBS)
     add_library(${PROJECT_NAME} SHARED ${CIRCULARBUFFER_SOURCES})
@@ -101,6 +108,16 @@ else()
     set(CIRCULARBUFFER_LIBRARIES ${PROJECT_NAME}::${PROJECT_NAME} PARENT_SCOPE)
 endif()
 message(STATUS "CIRCULARBUFFER_LIBRARIES: ${CIRCULARBUFFER_LIBRARIES}")
+#------------------------------------------------------------------------------------------
+# Conditional compilation and warnings
+if(BUILD_CIRCULARBUFFER_MULTI_THREADING)
+    if(HAS_TBB)
+        message(STATUS "Multi-threading enabled with Intel TBB.")
+        target_link_libraries(${PROJECT_NAME} PRIVATE TBB::tbb)
+    else()
+        message(WARNING "Multi-threading is enabled, but Intel TBB is not found. Compiling without multi-threading support.")
+    endif()
+endif()
 #------------------------------------------------------------------------------------------
 # Building examples
 if(BUILD_CIRCULARBUFFER_EXAMPLE)
@@ -159,12 +176,12 @@ if(CIRCULARBUFFER_STANDALONE_PROJECT)
         INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
 
-    install(DIRECTORY ${CIRCULARBUFFER_INCLUDE_DIR}/${CIRCULARBUFFER_PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    install(DIRECTORY ${CIRCULARBUFFER_INCLUDE_DIR}/${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
     install(EXPORT CircularBufferTargets
         FILE CircularBufferTargets.cmake
-        NAMESPACE CircularBuffer::
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${CIRCULARBUFFER_PROJECT_NAME}
+        NAMESPACE ${PROJECT_NAME}::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
     )
 endif()
 #------------------------------------------------------------------------------------------

@@ -23,6 +23,38 @@
 
 - C++20 compiler
 - CMake 3.5 or higher
+- Ninja (optional, for faster builds)
+- TBB (optional, for multithreading support)
+
+### Installing Dependencies
+
+#### Linux
+
+To install CMake, Ninja, and TBB on Linux, use the following commands:
+```bash
+sudo apt update; sudo apt install cmake ninja-build libtbb-dev -y
+```
+#### MacOS
+```bash
+brew update; brew install cmake ninja tbb
+```
+
+#### Windows 
+```pwsh
+git clone https://github.com/microsoft/vcpkg.git
+```
+```pwsh
+cd vcpkg
+```
+```pwsh
+./bootstrap-vcpkg.bat
+```
+```pwsh
+vcpkg integrate install
+```
+```pwsh
+vcpkg install cmake ninja tbb
+```
 
 ### Building on Linux
 
@@ -85,10 +117,24 @@ Ninja is known for its speed and is the preferred option for many developers. Fo
 
 Note: If you haven't installed Ninja, you can do so by following the instructions on [Ninja's GitHub page](https://github.com/ninja-build/ninja).
 
+### Multithreading Support
+
+If you require multithreading support and have TBB installed, you need to enable the `BUILD_CIRCULARBUFFER_MULTI_THREADING` option. By default, this option is `off`. To enable it, use the following command:
+
+```bash
+cmake -DBUILD_CIRCULARBUFFER_MULTI_THREADING=ON -DFORCE_COLORED_OUTPUT=ON -DCMAKE_BUILD_TYPE=Release -B build
+```
+#### Using ninja
+```bash
+cmake -DBUILD_CIRCULARBUFFER_MULTI_THREADING=ON -DFORCE_COLORED_OUTPUT=ON -DCMAKE_BUILD_TYPE=Release -B build -G Ninja
+```
+
+
 ## Test The Implementation 
 ```bash
     ninja test # ctest
 ```
+
 
 
 ## Including in Another Project
@@ -98,6 +144,13 @@ add_subdirectory(path/to/CircularBuffer)
 target_link_libraries(your_target_name PRIVATE CircularBuffer::circularbuffer)
 ```
 
+### Including in Another Project With Multithreading Support
+You can include the `CircularBuffer` library in your CMake project by adding the following to your `CMakeLists.txt`:
+```cmake
+add_subdirectory(path/to/CircularBuffer)
+BUILD_CIRCULARBUFFER_MULTI_THREADING = ON
+target_link_libraries(your_target_name PRIVATE CircularBuffer::circularbuffer)
+```
 ## Usage Example
 Here's a simple example of how to use the `CircularBuffer`:
 

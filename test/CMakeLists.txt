@@ -21,7 +21,10 @@ macro(package_add_test TESTNAME)
     target_link_libraries(${TESTNAME} GTest::GTest GTest::Main ${PROJECT_NAME})
     add_test(NAME ${TESTNAME} COMMAND ${TESTNAME})
     set_target_properties(${TESTNAME} PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/testBin)
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/testBin
+        ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/testlib
+        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/testlib
+    )
     add_dependencies(${TESTNAME} ${PROJECT_NAME})
 endmacro()
 
