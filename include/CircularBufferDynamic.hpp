@@ -197,8 +197,6 @@ namespace CircularBuffer {
             template <typename U = T>
             std::enable_if_t<std::is_arithmetic<U>::value, std::optional<std::vector<U>>> sorted(void) const {
                 //--------------------------
-                std::unique_lock<std::mutex> lock(m_mutex);
-                //--------------------------
                 return get_sorted();
                 //--------------------------
             }// end std::optional<std::vector<T>> sorted(void) const
@@ -206,16 +204,12 @@ namespace CircularBuffer {
             template <typename U = T>
             std::enable_if_t<std::is_arithmetic<U>::value, std::optional<std::vector<U>>> reverse_sorted(void) const {
                 //--------------------------
-                std::unique_lock<std::mutex> lock(m_mutex);
-                //--------------------------
                 return get_reverse_sorted();
                 //--------------------------
             }// end std::optional<std::vector<T>> reverse_sorted(void) const
             //--------------------------
             template <typename U = T>
             std::enable_if_t<std::is_arithmetic<U>::value, std::optional<double>> median(void) const {
-                //--------------------------
-                std::unique_lock<std::mutex> lock(m_mutex);
                 //--------------------------
                 return get_median();
                 //--------------------------
@@ -491,7 +485,8 @@ namespace CircularBuffer {
                     return std::nullopt;
                 }// end if (m_buffer.empty())
                 //--------------------------
-                auto sorted_buffer = m_buffer;
+                std::vector<U> sorted_buffer(m_buffer.begin(), m_buffer.end());
+                //--------------------------
 #if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
                 std::sort(std::execution::par, sorted_buffer.begin(), sorted_buffer.end());
 #else
@@ -510,7 +505,8 @@ namespace CircularBuffer {
                     return std::nullopt;
                 }// end if (m_buffer.empty())
                 //--------------------------
-                auto sorted_buffer = m_buffer;
+                std::vector<U> sorted_buffer(m_buffer.begin(), m_buffer.end());
+                //--------------------------
 #if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
                 std::sort(std::execution::par, sorted_buffer.rbegin(), sorted_buffer.rend());
 #else
@@ -522,6 +518,8 @@ namespace CircularBuffer {
             //--------------------------
             template <typename U = T>
             std::enable_if_t<std::is_arithmetic<U>::value, std::optional<double>> get_median(void) const {
+                //--------------------------
+                std::unique_lock<std::mutex> lock(m_mutex);
                 //--------------------------
                 if (m_buffer.empty()) {
                     return std::nullopt;
