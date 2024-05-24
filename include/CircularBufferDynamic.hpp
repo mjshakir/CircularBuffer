@@ -527,31 +527,43 @@ namespace CircularBuffer {
                     return std::nullopt;
                 }// end if (m_buffer.empty())
                 //--------------------------
-                auto sorted_buffer      = m_buffer;
-                const size_t size_      = sorted_buffer.size();
-                const size_t half_size_ = size_ / 2UL;
+                if (m_buffer.size() == 1) {
+                    return static_cast<double>(m_buffer.front());
+                }// end if (m_buffer.size() == 1)
                 //--------------------------
-#if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
-                std::nth_element(std::execution::par, sorted_buffer.begin(), sorted_buffer.begin() + half_size_, sorted_buffer.end());
-#else
-                std::nth_element(sorted_buffer.begin(), sorted_buffer.begin() + half_size_, sorted_buffer.end());
-#endif
+                const size_t size_      = m_buffer.size();
+                const size_t half_size_ = size_ / 2UL;
                 //--------------------------
                 if (size_ % 2UL == 0) {
                     //--------------------------
-                    const double median_1 = static_cast<double>(sorted_buffer.at(half_size_));
+                    // For even number of elements, need to find two middle elements
+                    //--------------------------
+                    std::vector<T> temp(half_size_ + 1);
+                    //--------------------------
 #if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
-                    std::nth_element(std::execution::par, sorted_buffer.begin(), sorted_buffer.begin() + half_size_ - 1, sorted_buffer.begin() + half_size_);
+                    std::partial_sort_copy(std::execution::par, m_buffer.begin(), m_buffer.end(), temp.begin(), temp.end());
 #else
-                    std::nth_element(sorted_buffer.begin(), sorted_buffer.begin() + half_size_ - 1, sorted_buffer.begin() + half_size_);
+                    std::partial_sort_copy(m_buffer.begin(), m_buffer.end(), temp.begin(), temp.end());
 #endif
-                    const double median_2 = static_cast<double>(sorted_buffer.at(half_size_ - 1));
+                    //--------------------------
+                    const double median_1 = static_cast<double>(temp.at(half_size_));
+                    const double median_2 = static_cast<double>(temp.at(half_size_ - 1));
                     //--------------------------
                     return (median_1 + median_2) / 2.;
                     //--------------------------
                 }// end if (size_ % 2UL == 0)
                 //--------------------------
-                return static_cast<double>(sorted_buffer.at(half_size_));
+                // For odd number of elements, find the middle element
+                //--------------------------
+                std::vector<T> temp(half_size_ + 1);
+                //--------------------------
+#if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
+                std::partial_sort_copy(std::execution::par, m_buffer.begin(), m_buffer.end(), temp.begin(), temp.end());
+#else
+                std::partial_sort_copy(m_buffer.begin(), m_buffer.end(), temp.begin(), temp.end());
+#endif
+                //--------------------------
+                return static_cast<double>(temp.at(half_size_));
                 //--------------------------
             }// end std::optional<T> get_median(void) const
             //--------------------------------------------------------------
