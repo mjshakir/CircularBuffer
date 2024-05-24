@@ -265,7 +265,7 @@ TEST(CircularBufferFixedTest, CopyConstructor) {
 }
 
 TEST(CircularBufferFixedTest, CopyAssignmentOperator) {
-    CircularBuffer::CircularBufferFixed<int, 5> buffer1;
+    CircularBuffer::CircularBufferFixed<int, 5UL> buffer1;
     buffer1.push(1);
     buffer1.push(2);
     buffer1.push(3);
@@ -279,7 +279,7 @@ TEST(CircularBufferFixedTest, CopyAssignmentOperator) {
 }
 
 TEST(CircularBufferFixedTest, MoveConstructor) {
-    CircularBuffer::CircularBufferFixed<int, 5> buffer;
+    CircularBuffer::CircularBufferFixed<int, 5UL> buffer;
     buffer.push(1);
     buffer.push(2);
     buffer.push(3);
@@ -295,7 +295,7 @@ TEST(CircularBufferFixedTest, MoveConstructor) {
 }
 
 TEST(CircularBufferFixedTest, MoveAssignmentOperator) {
-    CircularBuffer::CircularBufferFixed<int, 5> buffer1;
+    CircularBuffer::CircularBufferFixed<int, 5UL> buffer1;
     buffer1.push(1);
     buffer1.push(2);
     buffer1.push(3);
