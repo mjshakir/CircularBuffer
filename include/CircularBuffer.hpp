@@ -39,7 +39,7 @@ namespace CircularBuffer {
             //--------------------------
             CircularBuffer& operator=(CircularBuffer&& other)       = default;
             //--------------------------
-            ~CircularBuffer(void) = default;
+            ~CircularBuffer(void)                                   = default;
             //--------------------------------------------------------------
     };// end class CircularBuffer
     //--------------------------------------------------------------
