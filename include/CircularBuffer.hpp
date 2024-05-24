@@ -31,6 +31,14 @@ namespace CircularBuffer {
                 //--------------------------
             }// end explicit CircularBuffer(size_t size)
             //--------------------------
+            CircularBuffer(const CircularBuffer& other)             = default;
+            //--------------------------
+            CircularBuffer& operator=(const CircularBuffer& other)  = default;
+            //--------------------------
+            CircularBuffer(CircularBuffer&& other)                  = default;
+            //--------------------------
+            CircularBuffer& operator=(CircularBuffer&& other)       = default;
+            //--------------------------
             ~CircularBuffer(void) = default;
             //--------------------------------------------------------------
     };// end class CircularBuffer
