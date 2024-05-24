@@ -340,7 +340,7 @@ namespace CircularBuffer {
                 //--------------------------
                 if constexpr (std::is_arithmetic<T>::value){
                     //--------------------------
-                    atomic_sub(m_buffer.at(current_head);
+                    atomic_sub(m_buffer.at(current_head));
                     //--------------------------
                 }//end if constexpr (std::is_arithmetic<T>::value)
                 //--------------------------
