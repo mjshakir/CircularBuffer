@@ -35,7 +35,7 @@ namespace CircularBuffer {
      *
      * @example usage:
      * @code
-     * #include "CircularBuffer.h"
+     * #include "CircularBuffer.hpp"
      *
      * int main() {
      *     CircularBuffer::CircularBufferFixed<int, 5> buffer;
@@ -757,8 +757,11 @@ namespace CircularBuffer {
              * This method returns the median of all elements currently stored in the buffer. This function is only available
              * for arithmetic types. If the buffer is empty, it returns std::nullopt.
              *
-             * The median is obtained by first sorting the elements and then selecting the middle value if the number of elements
-             * is odd, or the average of the two middle values if the number of elements is even.
+             * The median is obtained by first copying the elements to a temporary buffer, using std::nth_element to partially sort
+             * the buffer to find the median value. If the number of elements is odd, the middle value is returned. If the number of elements
+             * is even, the average of the two middle values is returned.
+             *
+             * The time complexity of obtaining the median is O(n) on average, but O(n^2) in the worst case due to the nth_element algorithm.
              *
              * @return The median of the elements, or std::nullopt if the buffer is empty.
              *
