@@ -34,9 +34,14 @@ jobs:
         .\vcpkg\vcpkg.exe search gtest
         .\vcpkg\vcpkg.exe search tbb
 
-    - name: Install cmake and gtest
+    - name: Install CMake
       run: |
         .\vcpkg\vcpkg.exe install cmake:arm64-windows gtest:arm64-windows
+        .\vcpkg\vcpkg.exe integrate install
+
+    - name: Install GTest
+      run: |
+        .\vcpkg\vcpkg.exe install gtest:arm64-windows
         .\vcpkg\vcpkg.exe integrate install
     
     - name: Install TBB
