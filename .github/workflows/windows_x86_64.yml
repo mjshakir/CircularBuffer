@@ -26,10 +26,10 @@ jobs:
 
     - name: Update vcpkg and install packages
       run: |
-        .\vcpkg\vcpkg.exe update
-        .\vcpkg\vcpkg.exe upgrade --no-dry-run
-        .\vcpkg\vcpkg.exe install cmake:x64-windows gtest:x64-windows tbb:x64-windows --vcpkg-root=$(pwd)/vcpkg
-        .\vcpkg\vcpkg.exe integrate install --vcpkg-root=$(pwd)/vcpkg
+        vcpkg update
+        vcpkg upgrade --no-dry-run
+        vcpkg install cmake:x64-windows gtest:x64-windows tbb:x64-windows --vcpkg-root=$(pwd)/vcpkg
+        vcpkg integrate install --vcpkg-root=$(pwd)/vcpkg
 
     - name: Setup CMake and Ninja
       uses: lukka/get-cmake@v3.21.1
@@ -68,7 +68,7 @@ jobs:
     - name: Configure CMake
       run: |
         echo "CMAKE_TOOLCHAIN_FILE is: $env:CMAKE_TOOLCHAIN_FILE"
-        cmake -S . -B build -DBUILD_CIRCULARBUFFER_MULTI_THREADING=ON -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_TOOLCHAIN_FILE=$env:CMAKE_TOOLCHAIN_FILE
+        cmake -S . -B build -DBUILD_CIRCULARBUFFER_MULTI_THREADING=ON -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
 
     - name: Build
       run: cmake --build build --config ${{ env.BUILD_TYPE }} --verbose
