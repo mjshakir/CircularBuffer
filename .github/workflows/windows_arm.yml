@@ -23,6 +23,11 @@ jobs:
         echo "VCPKG_ROOT=$(pwd)/vcpkg" >> $GITHUB_ENV
         echo "CMAKE_TOOLCHAIN_FILE=$(pwd)/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
 
+    - name: Install cmake and gtest
+      run: |
+        vcpkg install cmake:arm64-windows gtest:arm64-windows
+        vcpkg integrate install
+
     - name: Install TBB
       run: |
         vcpkg install tbb:arm64-windows

@@ -24,6 +24,11 @@ jobs:
         .\vcpkg\vcpkg.exe install tbb --triplet=x64-windows
         echo "VCPKG_ROOT=$(pwd)/vcpkg" >> $GITHUB_ENV
         echo "CMAKE_TOOLCHAIN_FILE=$(pwd)/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
+
+    - name: Install cmake and gtest
+      run: |
+        vcpkg install cmake:x64-windows gtest:x64-windows
+        vcpkg integrate install
     
     - name: Install TBB
       run: |
