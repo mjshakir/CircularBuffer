@@ -19,35 +19,31 @@ jobs:
       run: |
         git clone https://github.com/microsoft/vcpkg.git
         .\vcpkg\bootstrap-vcpkg.bat
-        .\vcpkg\vcpkg.exe install tbb --triplet=arm64-windows
         echo "VCPKG_ROOT=$(pwd)/vcpkg" >> $GITHUB_ENV
         echo "CMAKE_TOOLCHAIN_FILE=$(pwd)/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
 
-    - name: Update vcpkg
-      run: |
-        .\vcpkg\vcpkg.exe update
-        .\vcpkg\vcpkg.exe upgrade --no-dry-run
-  
-    - name: Verify vcpkg ports
-      run: |
-        .\vcpkg\vcpkg.exe search cmake
-        .\vcpkg\vcpkg.exe search gtest
-        .\vcpkg\vcpkg.exe search tbb
-
     - name: Install CMake
       run: |
-        .\vcpkg\vcpkg.exe install cmake:arm64-windows gtest:arm64-windows
-        .\vcpkg\vcpkg.exe integrate install
-
+        vcpkg search cmake
+        vcpkg install cmake:arm64-windows
+        vcpkg integrate install
+    
     - name: Install GTest
       run: |
-        .\vcpkg\vcpkg.exe install gtest:arm64-windows
-        .\vcpkg\vcpkg.exe integrate install
+        vcpkg search gtest
+        vcpkg install gtest:arm64-windows
+        vcpkg integrate install
     
     - name: Install TBB
       run: |
-        .\vcpkg\vcpkg.exe install tbb:arm64-windows
-        .\vcpkg\vcpkg.exe integrate install
+        vcpkg search tbb
+        vcpkg install tbb:arm64-windows
+        vcpkg integrate install
+
+    - name: Update vcpkg
+      run: |
+        vcpkg update
+        vcpkg upgrade --no-dry-run
 
     - name: Setup CMake and Ninja
       uses: lukka/get-cmake@v3.21.1
