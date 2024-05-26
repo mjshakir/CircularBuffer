@@ -21,14 +21,31 @@ jobs:
       run: |
         git clone https://github.com/microsoft/vcpkg.git
         .\vcpkg\bootstrap-vcpkg.bat
-        .\vcpkg\vcpkg.exe install tbb --triplet=x64-windows
         echo "VCPKG_ROOT=$(pwd)/vcpkg" >> $GITHUB_ENV
         echo "CMAKE_TOOLCHAIN_FILE=$(pwd)/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
     
+    - name: Install CMake
+      run: |
+        vcpkg search cmake
+        vcpkg install cmake:x64-windows
+        vcpkg integrate install
+    
+    - name: Install GTest
+      run: |
+        vcpkg search gtest
+        vcpkg install gtest:x64-windows
+        vcpkg integrate install
+    
     - name: Install TBB
       run: |
+        vcpkg search tbb
         vcpkg install tbb:x64-windows
         vcpkg integrate install
+
+    - name: Update vcpkg
+      run: |
+        vcpkg update
+        vcpkg upgrade --no-dry-run
 
     - name: Setup CMake and Ninja
       uses: lukka/get-cmake@v3.21.1
