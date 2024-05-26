@@ -28,8 +28,8 @@ jobs:
       run: |
         .\vcpkg\vcpkg.exe update
         .\vcpkg\vcpkg.exe upgrade --no-dry-run
-        .\vcpkg\vcpkg.exe install cmake:x64-windows gtest:x64-windows tbb:x64-windows
-        .\vcpkg\vcpkg.exe integrate install
+        .\vcpkg\vcpkg.exe install cmake:x64-windows gtest:x64-windows tbb:x64-windows --vcpkg-root=$(pwd)/vcpkg
+        .\vcpkg\vcpkg.exe integrate install --vcpkg-root=$(pwd)/vcpkg
 
     - name: Setup CMake and Ninja
       uses: lukka/get-cmake@v3.21.1
@@ -63,7 +63,7 @@ jobs:
       run: mkdir build
 
     - name: Verify vcpkg Installation
-      run: .\vcpkg\vcpkg.exe list
+      run: .\vcpkg\vcpkg.exe list --vcpkg-root=$(pwd)/vcpkg
 
     - name: Configure CMake
       run: |
