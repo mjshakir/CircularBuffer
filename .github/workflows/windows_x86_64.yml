@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [x86]
+        arch: [x64]
 
     steps:
     - name: Checkout code
@@ -21,34 +21,14 @@ jobs:
       run: |
         git clone https://github.com/microsoft/vcpkg.git
         .\vcpkg\bootstrap-vcpkg.bat
-        .\vcpkg\vcpkg.exe install tbb --triplet=x64-windows
         echo "VCPKG_ROOT=$(pwd)/vcpkg" >> $GITHUB_ENV
         echo "CMAKE_TOOLCHAIN_FILE=$(pwd)/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
 
-    - name: Update vcpkg
+    - name: Update vcpkg and install packages
       run: |
         .\vcpkg\vcpkg.exe update
         .\vcpkg\vcpkg.exe upgrade --no-dry-run
-
-    - name: Verify vcpkg ports
-      run: |
-        .\vcpkg\vcpkg.exe search cmake
-        .\vcpkg\vcpkg.exe search gtest
-        .\vcpkg\vcpkg.exe search tbb
-
-    - name: Install CMake
-      run: |
-        .\vcpkg\vcpkg.exe install cmake:arm64-windows gtest:arm64-windows
-        .\vcpkg\vcpkg.exe integrate install
-
-    - name: Install GTest
-      run: |
-        .\vcpkg\vcpkg.exe install gtest:arm64-windows
-        .\vcpkg\vcpkg.exe integrate install
-    
-    - name: Install TBB
-      run: |
-        .\vcpkg\vcpkg.exe install tbb:x64-windows
+        .\vcpkg\vcpkg.exe install cmake:x64-windows gtest:x64-windows tbb:x64-windows
         .\vcpkg\vcpkg.exe integrate install
 
     - name: Setup CMake and Ninja
@@ -88,7 +68,7 @@ jobs:
     - name: Configure CMake
       run: |
         echo "CMAKE_TOOLCHAIN_FILE is: $env:CMAKE_TOOLCHAIN_FILE"
-        cmake -S . -B build -DBUILD_CIRCULARBUFFER_MULTI_THREADING=ON -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+        cmake -S . -B build -DBUILD_CIRCULARBUFFER_MULTI_THREADING=ON -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_TOOLCHAIN_FILE=$env:CMAKE_TOOLCHAIN_FILE
 
     - name: Build
       run: cmake --build build --config ${{ env.BUILD_TYPE }} --verbose
