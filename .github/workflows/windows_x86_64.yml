@@ -26,16 +26,19 @@ jobs:
     
     - name: Install CMake
       run: |
-        vcpkg install cmake
+        vcpkg search cmake
+        vcpkg install cmake:x64-windows
         vcpkg integrate install
     
     - name: Install GTest
       run: |
+        vcpkg search gtest
         vcpkg install gtest:x64-windows
         vcpkg integrate install
     
     - name: Install TBB
       run: |
+        vcpkg search tbb
         vcpkg install tbb:x64-windows
         vcpkg integrate install
 
