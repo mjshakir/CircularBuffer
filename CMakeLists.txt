@@ -103,7 +103,7 @@ add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 #------------------------------------------------------------------------------------------
 # Set CIRCULARBUFFER_LIBRARIES variable
 if(CIRCULARBUFFER_STANDALONE_PROJECT)
-    set(CIRCULARBUFFER_LIBRARIES ${PROJECT_NAME}::circularbuffer})
+    set(CIRCULARBUFFER_LIBRARIES ${PROJECT_NAME}::circularbuffer)
 else()
     set(CIRCULARBUFFER_LIBRARIES ${PROJECT_NAME}::circularbuffer PARENT_SCOPE)
 endif()
