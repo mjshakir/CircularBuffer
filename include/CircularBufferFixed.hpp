@@ -831,9 +831,7 @@ namespace CircularBuffer {
                     next_tail = increment(current_tail);
                     //--------------------------
                     if (is_full()) {  // Buffer is full
-                        //--------------------------
-                        static_cast<void>(pop_front());
-                        //--------------------------
+                        pop_front_unsafe();
                     }// end if (is_full())
                     //--------------------------
                 } while (!m_tail.compare_exchange_weak(current_tail, next_tail, std::memory_order_release, std::memory_order_relaxed));
@@ -859,9 +857,7 @@ namespace CircularBuffer {
                     next_tail = increment(current_tail);
                     //--------------------------
                     if (is_full()) {  // Buffer is full
-                        //--------------------------
-                        static_cast<void>(pop_front());
-                        //--------------------------
+                        pop_front_unsafe();
                     }// end if (is_full())
                     //--------------------------
                 } while (!m_tail.compare_exchange_weak(current_tail, next_tail, std::memory_order_release, std::memory_order_relaxed));
@@ -890,9 +886,7 @@ namespace CircularBuffer {
                     next_tail = increment(current_tail);
                     //--------------------------
                     if (is_full()) {  // Buffer is full
-                        //--------------------------
-                        static_cast<void>(pop_front());
-                        //--------------------------
+                        pop_front_unsafe();
                     }// end if (is_full())
                     //--------------------------
                 } while (!m_tail.compare_exchange_weak(current_tail, next_tail, std::memory_order_release, std::memory_order_relaxed));
@@ -1169,7 +1163,7 @@ namespace CircularBuffer {
 #endif
                     const double median_2 = static_cast<double>(sorted_buffer.at(half_count_ - 1));
                     //--------------------------
-                    return (median_1 + median_2) / 2.0;
+                    return (median_1 + median_2) / 2.;
                     //--------------------------
                 }//end if (count_ % 2 == 0)
                 //--------------------------
@@ -1234,6 +1228,34 @@ namespace CircularBuffer {
             std::atomic<size_t> m_head, m_tail, m_count;
             typename std::conditional<std::is_arithmetic<T>::value, std::atomic<T>, std::nullptr_t>::type m_sum, m_sum_squares;
             std::array<T, N> m_buffer;
+            //--------------------------
+            void pop_front_unsafe(void)  {
+                //--------------------------
+                size_t current_head{0}, next_head{0};
+                //--------------------------
+                do {
+                    //--------------------------
+                    current_head = m_head.load(std::memory_order_acquire);
+                    //--------------------------
+                    next_head = increment(current_head);
+                    //--------------------------
+                } while (!m_head.compare_exchange_weak(current_head, next_head,
+                                                    std::memory_order_release,
+                                                    std::memory_order_relaxed));
+                //--------------------------
+                if constexpr (std::is_arithmetic<T>::value){
+                    //--------------------------
+                    atomic_sub(m_buffer.at(current_head));
+                    //--------------------------
+                }//end if constexpr (std::is_arithmetic<T>::value)
+                //--------------------------
+                m_buffer[current_head].~T();
+                //--------------------------
+                // Decrement the count of elements
+                //--------------------------
+                m_count.fetch_sub(1, std::memory_order_acq_rel); // Using acq_rel for decrement to ensure total order with increment operations
+                //--------------------------
+            }// end void pop_front_unsafe(void)
         //--------------------------------------------------------------
     };//end class CircularBufferFixed
     //--------------------------------------------------------------

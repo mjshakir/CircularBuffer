@@ -365,9 +365,6 @@ namespace CircularBuffer {
              * @endcode
              */
             bool pop(void) {
-                //--------------------------
-                std::unique_lock<std::mutex> lock(m_mutex);
-                //--------------------------
                 return pop_front();
             }// end void pop(void)
             //--------------------------
@@ -872,9 +869,7 @@ namespace CircularBuffer {
                 std::unique_lock<std::mutex> lock(m_mutex);
                 //--------------------------
                 if (m_buffer.size() == m_max_size) {
-                    //--------------------------
-                    static_cast<void>(pop_front());
-                    //--------------------------
+                    pop_front_unsafe();
                 }// end if (m_buffer.size() == m_max_size)
                 //--------------------------
                 m_buffer.push_back(item);
@@ -893,9 +888,7 @@ namespace CircularBuffer {
                 std::unique_lock<std::mutex> lock(m_mutex);
                 //--------------------------
                 if (m_buffer.size() == m_max_size) {
-                    //--------------------------
-                    static_cast<void>(pop_front());
-                    //--------------------------
+                    pop_front_unsafe();
                 }// end if (m_buffer.size() == m_max_size)
                 //--------------------------
                 m_buffer.push_back(std::move(item));
@@ -916,9 +909,7 @@ namespace CircularBuffer {
                 std::unique_lock<std::mutex> lock(m_mutex);
                 //--------------------------
                 if (m_buffer.size() == m_max_size) {
-                    //--------------------------
-                    static_cast<void>(pop_front());
-                    //--------------------------
+                    pop_front_unsafe();
                 }//end if (m_buffer.size() == m_max_size)
                 //--------------------------
                 m_buffer.emplace_back(std::forward<Args>(args)...);
@@ -968,6 +959,8 @@ namespace CircularBuffer {
             }// end T get_top(void)
             //--------------------------
             bool pop_front(void)  {
+                //--------------------------
+                std::unique_lock<std::mutex> lock(m_mutex);
                 //--------------------------
                 if (m_buffer.empty()) {
                     return false;
@@ -1154,36 +1147,34 @@ namespace CircularBuffer {
                 const size_t size_      = m_buffer.size();
                 const size_t half_size_ = size_ / 2UL;
                 //--------------------------
-                if (size_ % 2UL == 0) {
+                std::vector<T> _temp(half_size_ + 1);
+                //--------------------------
+                if (size_ % 2UL == 0UL) {
                     //--------------------------
                     // For even number of elements, need to find two middle elements
                     //--------------------------
-                    std::vector<T> temp(half_size_ + 1);
-                    //--------------------------
 #if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
-                    std::partial_sort_copy(std::execution::par, m_buffer.begin(), m_buffer.end(), temp.begin(), temp.end());
+                    std::partial_sort_copy(std::execution::par, m_buffer.begin(), m_buffer.end(), _temp.begin(), _temp.end());
 #else
-                    std::partial_sort_copy(m_buffer.begin(), m_buffer.end(), temp.begin(), temp.end());
+                    std::partial_sort_copy(m_buffer.begin(), m_buffer.end(), _temp.begin(), _temp.end());
 #endif
                     //--------------------------
-                    const double median_1 = static_cast<double>(temp.at(half_size_));
-                    const double median_2 = static_cast<double>(temp.at(half_size_ - 1));
+                    const double median_1 = static_cast<double>(_temp.at(half_size_));
+                    const double median_2 = static_cast<double>(_temp.at(half_size_ - 1));
                     //--------------------------
                     return (median_1 + median_2) / 2.;
                     //--------------------------
-                }// end if (size_ % 2UL == 0)
+                }// end if (size_ % 2UL == 0UL)
                 //--------------------------
                 // For odd number of elements, find the middle element
                 //--------------------------
-                std::vector<T> temp(half_size_ + 1);
-                //--------------------------
 #if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
-                std::partial_sort_copy(std::execution::par, m_buffer.begin(), m_buffer.end(), temp.begin(), temp.end());
+                std::partial_sort_copy(std::execution::par, m_buffer.begin(), m_buffer.end(), _temp.begin(), _temp.end());
 #else
-                std::partial_sort_copy(m_buffer.begin(), m_buffer.end(), temp.begin(), temp.end());
+                std::partial_sort_copy(m_buffer.begin(), m_buffer.end(), _temp.begin(), _temp.end());
 #endif
                 //--------------------------
-                return static_cast<double>(temp.at(half_size_));
+                return static_cast<double>(_temp.at(half_size_));
                 //--------------------------
             }// end std::optional<T> get_median(void) const
             //--------------------------------------------------------------
@@ -1193,6 +1184,20 @@ namespace CircularBuffer {
             std::deque<T> m_buffer;
             typename std::conditional<std::is_arithmetic<T>::value, T, std::nullptr_t>::type m_sum, m_sum_squares;
             mutable std::mutex m_mutex;
+            //--------------------------
+            void pop_front_unsafe(void)  {
+                //--------------------------
+                if constexpr (std::is_arithmetic<T>::value){
+                    //--------------------------
+                    const T& front_ = m_buffer.front();
+                    m_sum -= front_;
+                    m_sum_squares -= std::pow(front_, 2);
+                    //--------------------------
+                }// end if constexpr (std::is_arithmetic<T>::value)
+                //--------------------------
+                m_buffer.pop_front();
+                //--------------------------
+            }// end void pop_front_unsafe(void)
             //--------------------------------------------------------------
     };// end class CircularBufferDynamic
     //--------------------------------------------------------------
