@@ -29,7 +29,7 @@ static void BM_CircularBufferPushInt(benchmark::State& state) {
     }
     state.SetComplexityN(state.range(0));
 }
-BENCHMARK(BM_CircularBufferPushInt)->RangeMultiplier(2)->Range(100, 10000)->Complexity();
+BENCHMARK(BM_CircularBufferPushInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
 
 // Benchmark pop operation for integers
 static void BM_CircularBufferPopInt(benchmark::State& state) {
@@ -42,7 +42,7 @@ static void BM_CircularBufferPopInt(benchmark::State& state) {
     }
     state.SetComplexityN(state.range(0));
 }
-BENCHMARK(BM_CircularBufferPopInt)->RangeMultiplier(2)->Range(100, 10000)->Complexity();
+BENCHMARK(BM_CircularBufferPopInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
 
 // Benchmark push operation for strings
 static void BM_CircularBufferPushString(benchmark::State& state) {
@@ -52,7 +52,7 @@ static void BM_CircularBufferPushString(benchmark::State& state) {
     }
     state.SetComplexityN(state.range(0));
 }
-BENCHMARK(BM_CircularBufferPushString)->RangeMultiplier(2)->Range(100, 10000)->Complexity();
+BENCHMARK(BM_CircularBufferPushString)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
 
 // Benchmark pop operation for strings
 static void BM_CircularBufferPopString(benchmark::State& state) {
@@ -65,7 +65,7 @@ static void BM_CircularBufferPopString(benchmark::State& state) {
     }
     state.SetComplexityN(state.range(0));
 }
-BENCHMARK(BM_CircularBufferPopString)->RangeMultiplier(2)->Range(100, 10000)->Complexity();
+BENCHMARK(BM_CircularBufferPopString)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
 
 // Benchmark sum method for integers
 static void BM_CircularBufferSumInt(benchmark::State& state) {
@@ -78,7 +78,7 @@ static void BM_CircularBufferSumInt(benchmark::State& state) {
     }
     state.SetComplexityN(state.range(0));
 }
-BENCHMARK(BM_CircularBufferSumInt)->RangeMultiplier(2)->Range(100, 10000)->Complexity();
+BENCHMARK(BM_CircularBufferSumInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
 
 // Benchmark mean method for integers
 static void BM_CircularBufferMeanInt(benchmark::State& state) {
@@ -91,7 +91,7 @@ static void BM_CircularBufferMeanInt(benchmark::State& state) {
     }
     state.SetComplexityN(state.range(0));
 }
-BENCHMARK(BM_CircularBufferMeanInt)->RangeMultiplier(2)->Range(100, 10000)->Complexity();
+BENCHMARK(BM_CircularBufferMeanInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
 
 // Benchmark variance method for integers
 static void BM_CircularBufferVarianceInt(benchmark::State& state) {
@@ -104,7 +104,7 @@ static void BM_CircularBufferVarianceInt(benchmark::State& state) {
     }
     state.SetComplexityN(state.range(0));
 }
-BENCHMARK(BM_CircularBufferVarianceInt)->RangeMultiplier(2)->Range(100, 10000)->Complexity();
+BENCHMARK(BM_CircularBufferVarianceInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
 
 // Benchmark standard deviation method for integers
 static void BM_CircularBufferStdDevInt(benchmark::State& state) {
@@ -117,7 +117,7 @@ static void BM_CircularBufferStdDevInt(benchmark::State& state) {
     }
     state.SetComplexityN(state.range(0));
 }
-BENCHMARK(BM_CircularBufferStdDevInt)->RangeMultiplier(2)->Range(100, 10000)->Complexity();
+BENCHMARK(BM_CircularBufferStdDevInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
 
 // Benchmark minimum method for integers
 static void BM_CircularBufferMinInt(benchmark::State& state) {
@@ -130,7 +130,7 @@ static void BM_CircularBufferMinInt(benchmark::State& state) {
     }
     state.SetComplexityN(state.range(0));
 }
-BENCHMARK(BM_CircularBufferMinInt)->RangeMultiplier(2)->Range(100, 10000)->Complexity();
+BENCHMARK(BM_CircularBufferMinInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
 
 // Benchmark maximum method for integers
 static void BM_CircularBufferMaxInt(benchmark::State& state) {
@@ -143,7 +143,7 @@ static void BM_CircularBufferMaxInt(benchmark::State& state) {
     }
     state.SetComplexityN(state.range(0));
 }
-BENCHMARK(BM_CircularBufferMaxInt)->RangeMultiplier(2)->Range(100, 10000)->Complexity();
+BENCHMARK(BM_CircularBufferMaxInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
 
 // Benchmark sorted method for integers
 static void BM_CircularBufferSortedInt(benchmark::State& state) {
@@ -156,7 +156,7 @@ static void BM_CircularBufferSortedInt(benchmark::State& state) {
     }
     state.SetComplexityN(state.range(0));
 }
-BENCHMARK(BM_CircularBufferSortedInt)->RangeMultiplier(2)->Range(100, 10000)->Complexity();
+BENCHMARK(BM_CircularBufferSortedInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
 
 // Benchmark reverse sorted method for integers
 static void BM_CircularBufferReverseSortedInt(benchmark::State& state) {
@@ -169,7 +169,7 @@ static void BM_CircularBufferReverseSortedInt(benchmark::State& state) {
     }
     state.SetComplexityN(state.range(0));
 }
-BENCHMARK(BM_CircularBufferReverseSortedInt)->RangeMultiplier(2)->Range(100, 10000)->Complexity();
+BENCHMARK(BM_CircularBufferReverseSortedInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
 
 // Benchmark median method for integers
 static void BM_CircularBufferMedianInt(benchmark::State& state) {
@@ -182,7 +182,7 @@ static void BM_CircularBufferMedianInt(benchmark::State& state) {
     }
     state.SetComplexityN(state.range(0));
 }
-BENCHMARK(BM_CircularBufferMedianInt)->RangeMultiplier(2)->Range(100, 10000)->Complexity();
+BENCHMARK(BM_CircularBufferMedianInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
 
 // Benchmark iteration over the buffer for integers
 static void BM_CircularBufferIterateInt(benchmark::State& state) {
@@ -197,7 +197,7 @@ static void BM_CircularBufferIterateInt(benchmark::State& state) {
     }
     state.SetComplexityN(state.range(0));
 }
-BENCHMARK(BM_CircularBufferIterateInt)->RangeMultiplier(2)->Range(100, 10000)->Complexity();
+BENCHMARK(BM_CircularBufferIterateInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
 
 // Benchmark iteration over the buffer for strings
 static void BM_CircularBufferIterateString(benchmark::State& state) {
@@ -212,6 +212,6 @@ static void BM_CircularBufferIterateString(benchmark::State& state) {
     }
     state.SetComplexityN(state.range(0));
 }
-BENCHMARK(BM_CircularBufferIterateString)->RangeMultiplier(2)->Range(100, 10000)->Complexity();
+BENCHMARK(BM_CircularBufferIterateString)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
 
 BENCHMARK_MAIN();
