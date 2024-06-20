@@ -27,8 +27,9 @@ static void BM_CircularBufferPushInt(benchmark::State& state) {
     for (auto _ : state) {
         buffer.push(generate_random_int());
     }
+    state.SetComplexityN(state.range(0));
 }
-BENCHMARK(BM_CircularBufferPushInt)->Arg(100)->Arg(1000)->Arg(10000);
+BENCHMARK(BM_CircularBufferPushInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
 
 // Benchmark pop operation for integers
 static void BM_CircularBufferPopInt(benchmark::State& state) {
@@ -39,8 +40,9 @@ static void BM_CircularBufferPopInt(benchmark::State& state) {
     for (auto _ : state) {
         buffer.pop();
     }
+    state.SetComplexityN(state.range(0));
 }
-BENCHMARK(BM_CircularBufferPopInt)->Arg(100)->Arg(1000)->Arg(10000);
+BENCHMARK(BM_CircularBufferPopInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
 
 // Benchmark push operation for strings
 static void BM_CircularBufferPushString(benchmark::State& state) {
@@ -48,8 +50,9 @@ static void BM_CircularBufferPushString(benchmark::State& state) {
     for (auto _ : state) {
         buffer.push(generate_random_string());
     }
+    state.SetComplexityN(state.range(0));
 }
-BENCHMARK(BM_CircularBufferPushString)->Arg(100)->Arg(1000)->Arg(10000);
+BENCHMARK(BM_CircularBufferPushString)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
 
 // Benchmark pop operation for strings
 static void BM_CircularBufferPopString(benchmark::State& state) {
@@ -60,28 +63,126 @@ static void BM_CircularBufferPopString(benchmark::State& state) {
     for (auto _ : state) {
         buffer.pop();
     }
+    state.SetComplexityN(state.range(0));
 }
-BENCHMARK(BM_CircularBufferPopString)->Arg(100)->Arg(1000)->Arg(10000);
+BENCHMARK(BM_CircularBufferPopString)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
 
-// Benchmark statistical methods for integers
-static void BM_CircularBufferStatsInt(benchmark::State& state) {
+// Benchmark sum method for integers
+static void BM_CircularBufferSumInt(benchmark::State& state) {
     CircularBuffer::CircularBuffer<int> buffer(state.range(0));
     for (int i = 0; i < state.range(0); ++i) {
         buffer.push(generate_random_int());
     }
     for (auto _ : state) {
         benchmark::DoNotOptimize(buffer.sum());
+    }
+    state.SetComplexityN(state.range(0));
+}
+BENCHMARK(BM_CircularBufferSumInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
+
+// Benchmark mean method for integers
+static void BM_CircularBufferMeanInt(benchmark::State& state) {
+    CircularBuffer::CircularBuffer<int> buffer(state.range(0));
+    for (int i = 0; i < state.range(0); ++i) {
+        buffer.push(generate_random_int());
+    }
+    for (auto _ : state) {
         benchmark::DoNotOptimize(buffer.mean());
+    }
+    state.SetComplexityN(state.range(0));
+}
+BENCHMARK(BM_CircularBufferMeanInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
+
+// Benchmark variance method for integers
+static void BM_CircularBufferVarianceInt(benchmark::State& state) {
+    CircularBuffer::CircularBuffer<int> buffer(state.range(0));
+    for (int i = 0; i < state.range(0); ++i) {
+        buffer.push(generate_random_int());
+    }
+    for (auto _ : state) {
         benchmark::DoNotOptimize(buffer.variance());
+    }
+    state.SetComplexityN(state.range(0));
+}
+BENCHMARK(BM_CircularBufferVarianceInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
+
+// Benchmark standard deviation method for integers
+static void BM_CircularBufferStdDevInt(benchmark::State& state) {
+    CircularBuffer::CircularBuffer<int> buffer(state.range(0));
+    for (int i = 0; i < state.range(0); ++i) {
+        buffer.push(generate_random_int());
+    }
+    for (auto _ : state) {
         benchmark::DoNotOptimize(buffer.standard_deviation());
+    }
+    state.SetComplexityN(state.range(0));
+}
+BENCHMARK(BM_CircularBufferStdDevInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
+
+// Benchmark minimum method for integers
+static void BM_CircularBufferMinInt(benchmark::State& state) {
+    CircularBuffer::CircularBuffer<int> buffer(state.range(0));
+    for (int i = 0; i < state.range(0); ++i) {
+        buffer.push(generate_random_int());
+    }
+    for (auto _ : state) {
         benchmark::DoNotOptimize(buffer.minimum());
+    }
+    state.SetComplexityN(state.range(0));
+}
+BENCHMARK(BM_CircularBufferMinInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
+
+// Benchmark maximum method for integers
+static void BM_CircularBufferMaxInt(benchmark::State& state) {
+    CircularBuffer::CircularBuffer<int> buffer(state.range(0));
+    for (int i = 0; i < state.range(0); ++i) {
+        buffer.push(generate_random_int());
+    }
+    for (auto _ : state) {
         benchmark::DoNotOptimize(buffer.maximum());
+    }
+    state.SetComplexityN(state.range(0));
+}
+BENCHMARK(BM_CircularBufferMaxInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
+
+// Benchmark sorted method for integers
+static void BM_CircularBufferSortedInt(benchmark::State& state) {
+    CircularBuffer::CircularBuffer<int> buffer(state.range(0));
+    for (int i = 0; i < state.range(0); ++i) {
+        buffer.push(generate_random_int());
+    }
+    for (auto _ : state) {
         benchmark::DoNotOptimize(buffer.sorted());
+    }
+    state.SetComplexityN(state.range(0));
+}
+BENCHMARK(BM_CircularBufferSortedInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
+
+// Benchmark reverse sorted method for integers
+static void BM_CircularBufferReverseSortedInt(benchmark::State& state) {
+    CircularBuffer::CircularBuffer<int> buffer(state.range(0));
+    for (int i = 0; i < state.range(0); ++i) {
+        buffer.push(generate_random_int());
+    }
+    for (auto _ : state) {
         benchmark::DoNotOptimize(buffer.reverse_sorted());
+    }
+    state.SetComplexityN(state.range(0));
+}
+BENCHMARK(BM_CircularBufferReverseSortedInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
+
+// Benchmark median method for integers
+static void BM_CircularBufferMedianInt(benchmark::State& state) {
+    CircularBuffer::CircularBuffer<int> buffer(state.range(0));
+    for (int i = 0; i < state.range(0); ++i) {
+        buffer.push(generate_random_int());
+    }
+    for (auto _ : state) {
         benchmark::DoNotOptimize(buffer.median());
     }
+    state.SetComplexityN(state.range(0));
 }
-BENCHMARK(BM_CircularBufferStatsInt)->Arg(100)->Arg(1000)->Arg(10000);
+BENCHMARK(BM_CircularBufferMedianInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
 
 // Benchmark iteration over the buffer for integers
 static void BM_CircularBufferIterateInt(benchmark::State& state) {
@@ -94,8 +195,9 @@ static void BM_CircularBufferIterateInt(benchmark::State& state) {
             benchmark::DoNotOptimize(*it);
         }
     }
+    state.SetComplexityN(state.range(0));
 }
-BENCHMARK(BM_CircularBufferIterateInt)->Arg(100)->Arg(1000)->Arg(10000);
+BENCHMARK(BM_CircularBufferIterateInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
 
 // Benchmark iteration over the buffer for strings
 static void BM_CircularBufferIterateString(benchmark::State& state) {
@@ -108,7 +210,8 @@ static void BM_CircularBufferIterateString(benchmark::State& state) {
             benchmark::DoNotOptimize(*it);
         }
     }
+    state.SetComplexityN(state.range(0));
 }
-BENCHMARK(BM_CircularBufferIterateString)->Arg(100)->Arg(1000)->Arg(10000);
+BENCHMARK(BM_CircularBufferIterateString)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
 
 BENCHMARK_MAIN();
