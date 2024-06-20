@@ -1,6 +1,6 @@
 # Try Finding Installed Google Test
 find_package(GTest QUIET)
-
+#------------------------------------------------------------------------------------------
 # Use Installed Version or Fetch
 if(NOT GTest_FOUND)
     include(FetchContent)
@@ -18,7 +18,7 @@ if(NOT GTest_FOUND)
     add_library(GTest::GTest ALIAS gtest)
     add_library(GTest::Main ALIAS gtest_main)
 endif()
-
+#------------------------------------------------------------------------------------------
 # Function to setup a test executable
 function(create_test_target TARGET_NAME SOURCE_FILE)
     # Correcting the file path according to the directory structure
@@ -44,9 +44,9 @@ function(create_test_target TARGET_NAME SOURCE_FILE)
     enable_testing()
     add_test(NAME ${TARGET_NAME} COMMAND ${TARGET_NAME})
 endfunction()
-
-
+#------------------------------------------------------------------------------------------
 # Add the tests without the 'test/' prefix since we are already in the test directory
 create_test_target(${PROJECT_NAME}_Fixed_Test   CircularBufferFixedTest.cpp)
 create_test_target(${PROJECT_NAME}_Dynamic_Test CircularBufferDynamicTest.cpp)
 create_test_target(${PROJECT_NAME}_Test         CircularBufferTest.cpp)
+#------------------------------------------------------------------------------------------

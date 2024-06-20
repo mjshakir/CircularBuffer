@@ -10,6 +10,9 @@
 | **ARM**      | ![Ubuntu ARM](https://github.com/mjshakir/CircularBuffer/actions/workflows/ubuntu_arm.yml/badge.svg) | ![macOS ARM](https://github.com/mjshakir/CircularBuffer/actions/workflows/macos_arm.yml/badge.svg) | ![Windows ARM](https://github.com/mjshakir/CircularBuffer/actions/workflows/windows_arm.yml/badge.svg) |
 | **RISCV**    | ![Ubuntu RISCV](https://github.com/mjshakir/CircularBuffer/actions/workflows/ubuntu_riscv.yml/badge.svg) |        |         |
 
+## Benchmark Results
+
+Benchmark results are generated for each commit and pull request. You can view the latest benchmark results by navigating to the Actions tab of the repository, selecting the relevant workflow run, and checking the job logs or the generated comments in the pull request.
 
 ## Features
 

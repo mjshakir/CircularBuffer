@@ -65,3 +65,15 @@ jobs:
         done
         echo "All $max_retries attempts failed"
         exit 1
+
+    - name: Run Fixed Benchmarks
+      run: ./build/benchmarkbin/CircularBuffer_Fixed_Benchmark | tee fixed_benchmark_results.txt
+  
+    - name: Run Dynamic Benchmarks
+      run: ./build/benchmarkbin/CircularBuffer_Dynamic_Benchmark | tee dynamic_benchmark_results.txt
+
+    - name: Display Fixed Benchmark results
+      run: cat fixed_benchmark_results.txt
+
+    - name: Display Dynamic Benchmark results
+      run: cat dynamic_benchmark_results.txt
