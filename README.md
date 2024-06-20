@@ -10,13 +10,12 @@
 | **ARM**      | ![Ubuntu ARM](https://github.com/mjshakir/CircularBuffer/actions/workflows/ubuntu_arm.yml/badge.svg) | ![macOS ARM](https://github.com/mjshakir/CircularBuffer/actions/workflows/macos_arm.yml/badge.svg) | ![Windows ARM](https://github.com/mjshakir/CircularBuffer/actions/workflows/windows_arm.yml/badge.svg) |
 | **RISCV**    | ![Ubuntu RISCV](https://github.com/mjshakir/CircularBuffer/actions/workflows/ubuntu_riscv.yml/badge.svg) |        |         |
 
-## Benchmark Status
+## Benchmark Results
 
-| Benchmark | Status | Results |
-|-----------|--------|---------|
-| **Fixed**   | ![Fixed Benchmark](https://github.com/mjshakir/CircularBuffer/actions/workflows/benchmark.yml/badge.svg) | [Download](https://github.com/mjshakir/CircularBuffer/actions/runs/latest/fixed-benchmark-results) |
-| **Dynamic** | ![Dynamic Benchmark](https://github.com/mjshakir/CircularBuffer/actions/workflows/benchmark.yml/badge.svg) | [Download](https://github.com/mjshakir/CircularBuffer/actions/runs/latest/dynamic-benchmark-results) |
-
+| Benchmark Type | Ubuntu | macOS | Windows |
+|----------------|--------|-------|---------|
+| **Fixed**      | [Download](https://github.com/mjshakir/CircularBuffer/actions/runs/latest/fixed-benchmark-results) | [Download](https://github.com/mjshakir/CircularBuffer/actions/runs/latest/fixed-benchmark-results) | [Download](https://github.com/mjshakir/CircularBuffer/actions/runs/latest/fixed-benchmark-results) |
+| **Dynamic**    | [Download](https://github.com/mjshakir/CircularBuffer/actions/runs/latest/dynamic-benchmark-results) | [Download](https://github.com/mjshakir/CircularBuffer/actions/runs/latest/dynamic-benchmark-results) | [Download](https://github.com/mjshakir/CircularBuffer/actions/runs/latest/dynamic-benchmark-results) |
 
 
 ## Features
