@@ -12,11 +12,7 @@
 
 ## Benchmark Results
 
-| Benchmark Type | Ubuntu | macOS | Windows |
-|----------------|--------|-------|---------|
-| **Fixed**      | [Download](https://github.com/mjshakir/CircularBuffer/actions/runs/latest/fixed-benchmark-results) | [Download](https://github.com/mjshakir/CircularBuffer/actions/runs/latest/fixed-benchmark-results) | [Download](https://github.com/mjshakir/CircularBuffer/actions/runs/latest/fixed-benchmark-results) |
-| **Dynamic**    | [Download](https://github.com/mjshakir/CircularBuffer/actions/runs/latest/dynamic-benchmark-results) | [Download](https://github.com/mjshakir/CircularBuffer/actions/runs/latest/dynamic-benchmark-results) | [Download](https://github.com/mjshakir/CircularBuffer/actions/runs/latest/dynamic-benchmark-results) |
-
+Benchmark results are generated for each commit and pull request. You can view the latest benchmark results by navigating to the Actions tab of the repository, selecting the relevant workflow run, and checking the job logs or the generated comments in the pull request.
 
 ## Features
 

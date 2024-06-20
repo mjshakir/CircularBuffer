@@ -67,19 +67,36 @@ jobs:
         exit 1
 
     - name: Run Fixed Benchmarks
-      run: ./build/benchmarkbin/CircularBuffer_Fixed_Benchmark > fixed_benchmark_results.txt
+      run: ./build/benchmarkbin/CircularBuffer_Fixed_Benchmark | tee fixed_benchmark_results.txt
   
     - name: Run Dynamic Benchmarks
-      run: ./build/benchmarkbin/CircularBuffer_Dynamic_Benchmark > dynamic_benchmark_results.txt
+      run: ./build/benchmarkbin/CircularBuffer_Dynamic_Benchmark | tee dynamic_benchmark_results.txt
 
-    - name: Upload Fixed Benchmark results
-      uses: actions/upload-artifact@v2
-      with:
-        name: dynamic_benchmark_results
-        path: fixed_benchmark_results.txt
+    - name: Display Fixed Benchmark results
+      run: cat fixed_benchmark_results.txt
 
-    - name: Upload Dynamic Benchmark results
-      uses: actions/upload-artifact@v2
+    - name: Display Dynamic Benchmark results
+      run: cat dynamic_benchmark_results.txt
+
+    - name: Create Benchmark Results Summary
+      run: |
+        echo "# Benchmark Results" > benchmark_results.md
+        echo "## Fixed Benchmark Results" >> benchmark_results.md
+        cat fixed_benchmark_results.txt >> benchmark_results.md
+        echo "## Dynamic Benchmark Results" >> benchmark_results.md
+        cat dynamic_benchmark_results.txt >> benchmark_results.md
+      shell: bash
+
+    - name: Display Benchmark Results Summary
+      uses: actions/github-script@v5
       with:
-        name: dynamic-benchmark-results
-        path: fixed_benchmark_results.txt
+        script: |
+          const fs = require('fs');
+          const path = './benchmark_results.md';
+          const content = fs.readFileSync(path, 'utf8');
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: content
+          });
