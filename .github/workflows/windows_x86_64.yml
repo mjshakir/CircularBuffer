@@ -122,15 +122,3 @@ jobs:
         ls -R build/
         Get-ChildItem -Path .\lib\Release\ -Recurse -Name
       shell: pwsh
-
-    - name: Run Fixed Benchmarks
-      run: .\build\benchmarkbin\CircularBuffer_Fixed_Benchmark | tee fixed_benchmark_results.txt
-  
-    - name: Run Dynamic Benchmarks
-      run: .\build\benchmarkbin\CircularBuffer_Dynamic_Benchmark | tee dynamic_benchmark_results.txt
-
-    - name: Display Fixed Benchmark results
-      run: Get-Content fixed_benchmark_results.txt
-
-    - name: Display Dynamic Benchmark results
-      run: Get-Content dynamic_benchmark_results.txt
