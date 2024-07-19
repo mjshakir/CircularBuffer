@@ -102,13 +102,13 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 )
 #------------------------------------------------------------------------------------------
 # Alias for CircularBuffer library
-add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+add_library(CircularBuffer::circularbuffer ALIAS ${PROJECT_NAME})
 #------------------------------------------------------------------------------------------
 # Set CIRCULARBUFFER_LIBRARIES variable
 if(CIRCULARBUFFER_STANDALONE_PROJECT)
-    set(CIRCULARBUFFER_LIBRARIES ${PROJECT_NAME}::circularbuffer)
+    set(CIRCULARBUFFER_LIBRARIES CircularBuffer::circularbuffer)
 else()
-    set(CIRCULARBUFFER_LIBRARIES ${PROJECT_NAME}::circularbuffer PARENT_SCOPE)
+    set(CIRCULARBUFFER_LIBRARIES CircularBuffer::circularbuffer PARENT_SCOPE)
 endif()
 message(STATUS "CIRCULARBUFFER_LIBRARIES: ${CIRCULARBUFFER_LIBRARIES}")
 #------------------------------------------------------------------------------------------
