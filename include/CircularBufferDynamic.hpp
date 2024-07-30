@@ -391,9 +391,9 @@ namespace CircularBuffer {
              * }
              * @endcode
              */
-            std::optional<T> top(void){
+            std::optional<T> top(void) const{
                 return get_top();
-            }//end void top(void)
+            }//end void top(void) const
             //--------------------------
             /**
              * @brief Gets and pops the top item from the buffer.
@@ -946,7 +946,7 @@ namespace CircularBuffer {
                 //--------------------------
             }// end std::optional<T> get_top_pop(void)
             //--------------------------
-            std::optional<T> get_top(void)  {
+            std::optional<T> get_top(void) const {
                 //--------------------------
                 std::unique_lock<std::mutex> lock(m_mutex);
                 //--------------------------
@@ -956,7 +956,7 @@ namespace CircularBuffer {
                 //--------------------------
                 return m_buffer.front();
                 //--------------------------
-            }// end T get_top(void)
+            }// end T get_top(void) const
             //--------------------------
             bool pop_front(void)  {
                 //--------------------------

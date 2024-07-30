@@ -380,7 +380,7 @@ namespace CircularBuffer {
              * }
              * @endcode
              */
-            std::optional<T> top(void){
+            std::optional<T> top(void) const {
                 return get_top();
             }//end void top(void)
             //--------------------------
@@ -903,7 +903,7 @@ namespace CircularBuffer {
                 //--------------------------
             }// end void emplace_back(Args&&... args)
             //--------------------------
-            std::optional<T> get_top(void)  {
+            std::optional<T> get_top(void) const {
                 //--------------------------
                 if (is_empty()) {
                     return std::nullopt;
@@ -911,7 +911,7 @@ namespace CircularBuffer {
                 //--------------------------
                 return m_buffer.at(m_head.load(std::memory_order_acquire));
                 //--------------------------
-            }//end std::optional<T> get_top(void)
+            }//end std::optional<T> get_top(void) const
             //--------------------------
             std::optional<T> get_top_pop(void)  {
                 //--------------------------
@@ -949,7 +949,7 @@ namespace CircularBuffer {
                 //--------------------------
             }// end std::optional<T> get_top_pop(void)
             //--------------------------
-            bool pop_front(void)  {
+            bool pop_front(void) {
                 //--------------------------
                 size_t current_head{0}, next_head{0};
                 //--------------------------
