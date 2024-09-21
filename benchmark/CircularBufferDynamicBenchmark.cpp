@@ -67,6 +67,59 @@ static void BM_CircularBufferPopString(benchmark::State& state) {
 }
 BENCHMARK(BM_CircularBufferPopString)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
 
+// Benchmark top method for integers
+static void BM_CircularBufferTopInt(benchmark::State& state) {
+    CircularBuffer::CircularBuffer<int> buffer(state.range(0));
+    for (int i = 0; i < state.range(0); ++i) {
+        buffer.push(generate_random_int());
+    }
+    for (auto _ : state) {
+        benchmark::DoNotOptimize(buffer.top());
+    }
+    state.SetComplexityN(state.range(0));
+}
+BENCHMARK(BM_CircularBufferTopInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
+
+// Benchmark top method for strings
+static void BM_CircularBufferTopString(benchmark::State& state) {
+    CircularBuffer::CircularBuffer<std::string> buffer(state.range(0));
+    for (int i = 0; i < state.range(0); ++i) {
+        buffer.push(generate_random_string());
+    }
+    for (auto _ : state) {
+        benchmark::DoNotOptimize(buffer.top());
+    }
+    state.SetComplexityN(state.range(0));
+}
+BENCHMARK(BM_CircularBufferTopString)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
+
+// Benchmark last method for integers
+static void BM_CircularBufferLastInt(benchmark::State& state) {
+    CircularBuffer::CircularBuffer<int> buffer(state.range(0));
+    for (int i = 0; i < state.range(0); ++i) {
+        buffer.push(generate_random_int());
+    }
+    for (auto _ : state) {
+        benchmark::DoNotOptimize(buffer.last());
+    }
+    state.SetComplexityN(state.range(0));
+}
+BENCHMARK(BM_CircularBufferLastInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
+
+// Benchmark last method for strings
+static void BM_CircularBufferLastString(benchmark::State& state) {
+    CircularBuffer::CircularBuffer<std::string> buffer(state.range(0));
+    for (int i = 0; i < state.range(0); ++i) {
+        buffer.push(generate_random_string());
+    }
+    for (auto _ : state) {
+        benchmark::DoNotOptimize(buffer.last());
+    }
+    state.SetComplexityN(state.range(0));
+}
+BENCHMARK(BM_CircularBufferLastString)->Arg(100)->Arg(1000)->Arg(10000)->Complexity();
+
+
 // Benchmark sum method for integers
 static void BM_CircularBufferSumInt(benchmark::State& state) {
     CircularBuffer::CircularBuffer<int> buffer(state.range(0));
