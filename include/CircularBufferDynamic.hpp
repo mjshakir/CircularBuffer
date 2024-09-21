@@ -396,6 +396,33 @@ namespace CircularBuffer {
             }//end void top(void) const
             //--------------------------
             /**
+             * @brief Gets the last item from the buffer without removing it.
+             *
+             * This method returns the item at the back of the buffer without removing it. If the buffer is empty,
+             * it returns std::nullopt.
+             *
+             * @return The last item, or std::nullopt if the buffer is empty.
+             *
+             * @example usage:
+             * @code
+             * CircularBuffer::CircularBufferDynamic<int> buffer(3);
+             * buffer.push(1);
+             * buffer.push(2);
+             * buffer.push(3);
+             * 
+             * auto last = buffer.last();
+             * if (last) {
+             *     std::cout << "Last element: " << *last << std::endl; // Output: Last element: 3
+             * } else {
+             *     std::cout << "Buffer is empty" << std::endl;
+             * }
+             * @endcode
+             */
+            std::optional<T> last(void) const{
+                return get_last();
+            }//end void last(void) const
+            //--------------------------
+            /**
              * @brief Gets and pops the top item from the buffer.
              *
              * This method returns the item at the front of the buffer and removes it. If the buffer is empty,
@@ -957,6 +984,18 @@ namespace CircularBuffer {
                 return m_buffer.front();
                 //--------------------------
             }// end T get_top(void) const
+            //--------------------------
+            std::optional<T> get_last(void) const {
+                //--------------------------
+                std::unique_lock<std::mutex> lock(m_mutex);
+                //--------------------------
+                if (m_buffer.empty()) {
+                    return std::nullopt;
+                }// end if (m_buffer.empty())
+                //--------------------------
+                return m_buffer.back();
+                //--------------------------
+            }// end T get_last(void) const
             //--------------------------
             bool pop_front(void)  {
                 //--------------------------

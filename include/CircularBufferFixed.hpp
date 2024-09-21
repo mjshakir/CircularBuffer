@@ -385,6 +385,33 @@ namespace CircularBuffer {
             }//end void top(void)
             //--------------------------
             /**
+             * @brief Gets the last item from the buffer without removing it.
+             *
+             * This method returns the item at the back of the buffer without removing it. If the buffer is empty,
+             * it returns std::nullopt.
+             *
+             * @return The last item, or std::nullopt if the buffer is empty.
+             *
+             * @example usage:
+             * @code
+             * CircularBuffer::CircularBufferFixed<int, 5> buffer;
+             * buffer.push(1);
+             * buffer.push(2);
+             * buffer.push(3);
+             * 
+             * auto last = buffer.last();
+             * if (last) {
+             *     std::cout << "Last element: " << *last << std::endl;
+             * } else {
+             *     std::cout << "Buffer is empty" << std::endl;
+             * }
+             * @endcode
+             */
+            std::optional<T> last(void) const{
+                return get_last();
+            }//end void last(void) const
+            //--------------------------
+            /**
              * @brief Gets and pops the top item from the buffer.
              *
              * This method returns the item at the front of the buffer and removes it. If the buffer is empty,
@@ -912,6 +939,19 @@ namespace CircularBuffer {
                 return m_buffer.at(m_head.load(std::memory_order_acquire));
                 //--------------------------
             }//end std::optional<T> get_top(void) const
+            //--------------------------
+            std::optional<T> get_last(void) const {
+                //--------------------------
+                if (is_empty()) {
+                    return std::nullopt;
+                }// end if (is_empty())
+                //--------------------------
+                size_t _tail_position = m_tail.load(std::memory_order_acquire);
+                _tail_position        = (_tail_position == 0) ? (N - 1) : (_tail_position - 1);
+                //--------------------------
+                return m_buffer.at(_tail_position);
+                //--------------------------
+            }//end std::optional<T> get_last(void) const
             //--------------------------
             std::optional<T> get_top_pop(void)  {
                 //--------------------------
