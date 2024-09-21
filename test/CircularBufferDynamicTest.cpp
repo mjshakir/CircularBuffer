@@ -243,6 +243,9 @@ TEST(CircularBufferDynamicTest, Emplace) {
     auto val = buffer.top().value();
     EXPECT_EQ(val.first, 1);
     EXPECT_EQ(val.second, 2);
+    auto last = buffer.last().value();
+    EXPECT_EQ(last.first, 3);
+    EXPECT_EQ(last.second, 4);
 }
 
 
