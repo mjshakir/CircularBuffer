@@ -11,6 +11,7 @@
 #include <cstddef>
 #include <cmath>
 #include <algorithm>
+#include <tuple>
 #if __has_include(<execution>)
     #if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
         #include <execution>
@@ -848,7 +849,7 @@ namespace CircularBuffer {
             //--------------------------------------------------------------
         protected:
             //--------------------------------------------------------------
-            void push_back(const T& item)  {
+            std::tuple<size_t, size_t> insert(void) {
                 //--------------------------
                 size_t current_tail{0}, next_tail{0};
                 //--------------------------
@@ -862,6 +863,14 @@ namespace CircularBuffer {
                     }// end if (is_full())
                     //--------------------------
                 } while (!m_tail.compare_exchange_weak(current_tail, next_tail, std::memory_order_release, std::memory_order_relaxed));
+                //--------------------------
+                return {current_tail, next_tail};
+                //--------------------------
+            } //end std::tuple<size_t, size_t> insert(void) const
+            //--------------------------
+            void push_back(const T& item)  {
+                //--------------------------
+                const auto [current_tail, next_tail] = insert(); 
                 //--------------------------
                 m_buffer.at(current_tail) = item;
                 //--------------------------
@@ -876,18 +885,7 @@ namespace CircularBuffer {
             //--------------------------
             void push_back(T&& item)  {
                 //--------------------------
-                size_t current_tail{0}, next_tail{0};
-                //--------------------------
-                do {
-                    current_tail = m_tail.load(std::memory_order_relaxed);
-                    //--------------------------
-                    next_tail = increment(current_tail);
-                    //--------------------------
-                    if (is_full()) {  // Buffer is full
-                        pop_front_unsafe();
-                    }// end if (is_full())
-                    //--------------------------
-                } while (!m_tail.compare_exchange_weak(current_tail, next_tail, std::memory_order_release, std::memory_order_relaxed));
+                const auto [current_tail, next_tail] = insert();
                 //--------------------------
                 m_buffer.at(current_tail) = std::move(item);
                 //--------------------------
@@ -905,18 +903,8 @@ namespace CircularBuffer {
             template <typename... Args>
             void emplace_back(Args&&... args)  {
                 //--------------------------
-                size_t current_tail{0}, next_tail{0};
-                //--------------------------
-                do {
-                    current_tail = m_tail.load(std::memory_order_relaxed);
-                    //--------------------------
-                    next_tail = increment(current_tail);
-                    //--------------------------
-                    if (is_full()) {  // Buffer is full
-                        pop_front_unsafe();
-                    }// end if (is_full())
-                    //--------------------------
-                } while (!m_tail.compare_exchange_weak(current_tail, next_tail, std::memory_order_release, std::memory_order_relaxed));
+                size_t current_tail;
+                std::tie(current_tail, std::ignore) = insert();
                 //--------------------------
                 new (&m_buffer[current_tail]) T(std::forward<Args>(args)...);  // Construct in-place
                 //--------------------------
