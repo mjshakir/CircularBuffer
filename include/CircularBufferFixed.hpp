@@ -11,8 +11,9 @@
 #include <cstddef>
 #include <cmath>
 #include <algorithm>
+#include <tuple>
 #if __has_include(<execution>)
-    #if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
+    #if defined(HAS_TBB) && defined(CIRCULARBUFFER_MULTI_THREADING)
         #include <execution>
     #endif
 #endif
@@ -848,9 +849,9 @@ namespace CircularBuffer {
             //--------------------------------------------------------------
         protected:
             //--------------------------------------------------------------
-            void push_back(const T& item)  {
+            std::tuple<size_t, size_t> insert(void) {
                 //--------------------------
-                size_t current_tail{0}, next_tail{0};
+                size_t current_tail{0UL}, next_tail{0UL};
                 //--------------------------
                 do {
                     current_tail = m_tail.load(std::memory_order_relaxed);
@@ -862,6 +863,14 @@ namespace CircularBuffer {
                     }// end if (is_full())
                     //--------------------------
                 } while (!m_tail.compare_exchange_weak(current_tail, next_tail, std::memory_order_release, std::memory_order_relaxed));
+                //--------------------------
+                return {current_tail, next_tail};
+                //--------------------------
+            } //end std::tuple<size_t, size_t> insert(void) const
+            //--------------------------
+            void push_back(const T& item) {
+                //--------------------------
+                const auto [current_tail, next_tail] = insert(); 
                 //--------------------------
                 m_buffer.at(current_tail) = item;
                 //--------------------------
@@ -874,20 +883,9 @@ namespace CircularBuffer {
                 //--------------------------
             }//end bool push_back(const T& item)
             //--------------------------
-            void push_back(T&& item)  {
+            void push_back(T&& item) {
                 //--------------------------
-                size_t current_tail{0}, next_tail{0};
-                //--------------------------
-                do {
-                    current_tail = m_tail.load(std::memory_order_relaxed);
-                    //--------------------------
-                    next_tail = increment(current_tail);
-                    //--------------------------
-                    if (is_full()) {  // Buffer is full
-                        pop_front_unsafe();
-                    }// end if (is_full())
-                    //--------------------------
-                } while (!m_tail.compare_exchange_weak(current_tail, next_tail, std::memory_order_release, std::memory_order_relaxed));
+                const auto [current_tail, next_tail] = insert();
                 //--------------------------
                 m_buffer.at(current_tail) = std::move(item);
                 //--------------------------
@@ -903,20 +901,10 @@ namespace CircularBuffer {
             }//end bool push_back(const T& item)
             //--------------------------
             template <typename... Args>
-            void emplace_back(Args&&... args)  {
+            void emplace_back(Args&&... args) {
                 //--------------------------
-                size_t current_tail{0}, next_tail{0};
-                //--------------------------
-                do {
-                    current_tail = m_tail.load(std::memory_order_relaxed);
-                    //--------------------------
-                    next_tail = increment(current_tail);
-                    //--------------------------
-                    if (is_full()) {  // Buffer is full
-                        pop_front_unsafe();
-                    }// end if (is_full())
-                    //--------------------------
-                } while (!m_tail.compare_exchange_weak(current_tail, next_tail, std::memory_order_release, std::memory_order_relaxed));
+                size_t current_tail{0UL};
+                std::tie(current_tail, std::ignore) = insert();
                 //--------------------------
                 new (&m_buffer[current_tail]) T(std::forward<Args>(args)...);  // Construct in-place
                 //--------------------------
@@ -1092,7 +1080,7 @@ namespace CircularBuffer {
                 //--------------------------
                 const double mean_ = get_mean().value_or(0.);
                 //--------------------------
-                return ((static_cast<double>(m_sum_squares.load(std::memory_order_relaxed)) / static_cast<double>(count_)) - std::pow(mean_, 2)) * 
+                return ((static_cast<double>(m_sum_squares.load(std::memory_order_relaxed)) / static_cast<double>(count_)) - std::pow<double>(mean_, 2)) * 
                             (static_cast<double>(count_) / static_cast<double>(count_ - 1));
                 //--------------------------
             }//end std::optional<T> get_variance(void) const
@@ -1115,7 +1103,7 @@ namespace CircularBuffer {
                     return std::nullopt;
                 }//end if(is_empty())
                 //--------------------------
-#if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
+#if defined(HAS_TBB) && defined(CIRCULARBUFFER_MULTI_THREADING)
                 return *std::min_element(std::execution::par, m_buffer.begin(), m_buffer.begin() + m_count.load(std::memory_order_relaxed));
 #else
                 return *std::min_element(m_buffer.begin(), m_buffer.begin() + m_count.load(std::memory_order_relaxed));
@@ -1130,7 +1118,7 @@ namespace CircularBuffer {
                     return std::nullopt;
                 }//end if(is_empty())
                 //--------------------------
-#if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
+#if defined(HAS_TBB) && defined(CIRCULARBUFFER_MULTI_THREADING)
                 return *std::max_element(std::execution::par, m_buffer.begin(), m_buffer.begin() + m_count.load(std::memory_order_relaxed));
 #else
                 return *std::max_element(m_buffer.begin(), m_buffer.begin() + m_count.load(std::memory_order_relaxed));
@@ -1146,7 +1134,7 @@ namespace CircularBuffer {
                 }//end if(is_empty())
                 //--------------------------
                 auto sorted_buffer = m_buffer;
-#if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
+#if defined(HAS_TBB) && defined(CIRCULARBUFFER_MULTI_THREADING)
                 std::sort(std::execution::par, sorted_buffer.begin(), sorted_buffer.begin() + m_count.load(std::memory_order_relaxed));
 #else
                 std::sort(sorted_buffer.begin(), sorted_buffer.begin() + m_count.load(std::memory_order_relaxed));
@@ -1163,7 +1151,7 @@ namespace CircularBuffer {
                 }//end if(is_empty())
                 //--------------------------
                 auto sorted_buffer = m_buffer;
-#if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
+#if defined(HAS_TBB) && defined(CIRCULARBUFFER_MULTI_THREADING)
                 std::sort(std::execution::par, sorted_buffer.begin(), sorted_buffer.begin() + m_count.load(std::memory_order_relaxed), std::greater<T>());
 #else
                 std::sort(sorted_buffer.begin(), sorted_buffer.begin() + m_count.load(std::memory_order_relaxed), std::greater<T>());
@@ -1187,7 +1175,7 @@ namespace CircularBuffer {
                     return static_cast<double>(sorted_buffer.at(0));
                 }//end if (count_ == 1)
                 //--------------------------
-#if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
+#if defined(HAS_TBB) && defined(CIRCULARBUFFER_MULTI_THREADING)
                 std::nth_element(std::execution::par, sorted_buffer.begin(), sorted_buffer.begin() + half_count_, sorted_buffer.end());
 #else
                 std::nth_element(sorted_buffer.begin(), sorted_buffer.begin() + half_count_, sorted_buffer.end());
@@ -1196,7 +1184,7 @@ namespace CircularBuffer {
                 if (count_ % 2UL == 0) {
                     //--------------------------
                     const double median_1 = static_cast<double>(sorted_buffer.at(half_count_));
-#if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
+#if defined(HAS_TBB) && defined(CIRCULARBUFFER_MULTI_THREADING)
                     std::nth_element(std::execution::par, sorted_buffer.begin(), sorted_buffer.begin() + half_count_ - 1, sorted_buffer.end());
 #else
                     std::nth_element(sorted_buffer.begin(), sorted_buffer.begin() + half_count_ - 1, sorted_buffer.end());
@@ -1242,10 +1230,10 @@ namespace CircularBuffer {
                 //--------------------------
                 if constexpr (std::is_floating_point<T>::value){
                     atomic_float_add(m_sum, value);
-                    atomic_float_add(m_sum_squares, std::pow(value, 2));
+                    atomic_float_add(m_sum_squares, std::pow<T>(value, 2));
                 } else {
                     m_sum.fetch_add(value, std::memory_order_relaxed);
-                    m_sum_squares.fetch_add(std::pow(value, 2), std::memory_order_relaxed);
+                    m_sum_squares.fetch_add(std::pow<T>(value, 2), std::memory_order_relaxed);
                 }//end if constexpr (std::is_floating_point<T>::value)
                 //--------------------------
             }//end void atomic_add(std::atomic<T>& atomic, const T& value)
@@ -1255,10 +1243,10 @@ namespace CircularBuffer {
                 //--------------------------
                 if constexpr (std::is_floating_point<T>::value){
                     atomic_float_sub(m_sum, value);
-                    atomic_float_sub(m_sum_squares, std::pow(value, 2));
+                    atomic_float_sub(m_sum_squares, std::pow<T>(value, 2));
                 } else {
                     m_sum.fetch_sub(value, std::memory_order_relaxed);
-                    m_sum_squares.fetch_sub(std::pow(value, 2), std::memory_order_relaxed);
+                    m_sum_squares.fetch_sub(std::pow<T>(value, 2), std::memory_order_relaxed);
                 }//end if constexpr (std::is_floating_point<T>::value)
                 //--------------------------
             }//end void atomic_sub(std::atomic<T>& atomic, const T& value)

@@ -85,6 +85,13 @@
         "stop_token": "cpp",
         "thread": "cpp",
         "cfenv": "cpp",
-        "cinttypes": "cpp"
+        "cinttypes": "cpp",
+        "future": "cpp",
+        "print": "cpp",
+        "queue": "cpp",
+        "scoped_allocator": "cpp",
+        "source_location": "cpp",
+        "stack": "cpp",
+        "typeindex": "cpp"
     }
 }
