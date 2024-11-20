@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 #------------------------------------------------------------------------------------------
 # Determine if CircularBuffer is built as a standalone project or included by other projects
 set(CIRCULARBUFFER_STANDALONE_PROJECT OFF)
