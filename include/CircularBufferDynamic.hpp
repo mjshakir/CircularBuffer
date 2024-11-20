@@ -12,7 +12,7 @@
 #include <cmath>
 #include <algorithm>
 #if __has_include(<execution>)
-    #if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
+    #if defined(HAS_TBB) && defined(CIRCULARBUFFER_MULTI_THREADING)
         #include <execution>
     #endif
 #endif
@@ -1105,7 +1105,7 @@ namespace CircularBuffer {
                     return std::nullopt;
                 }// end if (m_buffer.empty())
                 //--------------------------
-#if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
+#if defined(HAS_TBB) && defined(CIRCULARBUFFER_MULTI_THREADING)
                 return *std::min_element(std::execution::par, m_buffer.begin(), m_buffer.end());
 #else
                 return *std::min_element(m_buffer.begin(), m_buffer.end());
@@ -1122,7 +1122,7 @@ namespace CircularBuffer {
                     return std::nullopt;
                 }// end if (m_buffer.empty())
                 //--------------------------
-#if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
+#if defined(HAS_TBB) && defined(CIRCULARBUFFER_MULTI_THREADING)
                 return *std::max_element(std::execution::par, m_buffer.begin(), m_buffer.end());
 #else
                 return *std::max_element(m_buffer.begin(), m_buffer.end());
@@ -1141,7 +1141,7 @@ namespace CircularBuffer {
                 //--------------------------
                 std::vector<U> sorted_buffer(m_buffer.begin(), m_buffer.end());
                 //--------------------------
-#if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
+#if defined(HAS_TBB) && defined(CIRCULARBUFFER_MULTI_THREADING)
                 std::sort(std::execution::par, sorted_buffer.begin(), sorted_buffer.end());
 #else
                 std::sort(sorted_buffer.begin(), sorted_buffer.end());
@@ -1161,7 +1161,7 @@ namespace CircularBuffer {
                 //--------------------------
                 std::vector<U> sorted_buffer(m_buffer.begin(), m_buffer.end());
                 //--------------------------
-#if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
+#if defined(HAS_TBB) && defined(CIRCULARBUFFER_MULTI_THREADING)
                 std::sort(std::execution::par, sorted_buffer.rbegin(), sorted_buffer.rend());
 #else
                 std::sort(sorted_buffer.rbegin(), sorted_buffer.rend());
@@ -1192,7 +1192,7 @@ namespace CircularBuffer {
                     //--------------------------
                     // For even number of elements, need to find two middle elements
                     //--------------------------
-#if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
+#if defined(HAS_TBB) && defined(CIRCULARBUFFER_MULTI_THREADING)
                     std::partial_sort_copy(std::execution::par, m_buffer.begin(), m_buffer.end(), _temp.begin(), _temp.end());
 #else
                     std::partial_sort_copy(m_buffer.begin(), m_buffer.end(), _temp.begin(), _temp.end());
@@ -1207,7 +1207,7 @@ namespace CircularBuffer {
                 //--------------------------
                 // For odd number of elements, find the middle element
                 //--------------------------
-#if defined(HAS_TBB) && defined(BUILD_CIRCULARBUFFER_MULTI_THREADING)
+#if defined(HAS_TBB) && defined(CIRCULARBUFFER_MULTI_THREADING)
                 std::partial_sort_copy(std::execution::par, m_buffer.begin(), m_buffer.end(), _temp.begin(), _temp.end());
 #else
                 std::partial_sort_copy(m_buffer.begin(), m_buffer.end(), _temp.begin(), _temp.end());
