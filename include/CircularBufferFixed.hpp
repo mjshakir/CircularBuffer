@@ -1080,7 +1080,7 @@ namespace CircularBuffer {
                 //--------------------------
                 const double mean_ = get_mean().value_or(0.);
                 //--------------------------
-                return ((static_cast<double>(m_sum_squares.load(std::memory_order_relaxed)) / static_cast<double>(count_)) - std::pow(mean_, 2)) * 
+                return ((static_cast<double>(m_sum_squares.load(std::memory_order_relaxed)) / static_cast<double>(count_)) - std::pow<double>(mean_, 2)) * 
                             (static_cast<double>(count_) / static_cast<double>(count_ - 1));
                 //--------------------------
             }//end std::optional<T> get_variance(void) const
@@ -1230,10 +1230,10 @@ namespace CircularBuffer {
                 //--------------------------
                 if constexpr (std::is_floating_point<T>::value){
                     atomic_float_add(m_sum, value);
-                    atomic_float_add(m_sum_squares, std::pow(value, 2));
+                    atomic_float_add(m_sum_squares, std::pow<T>(value, 2));
                 } else {
                     m_sum.fetch_add(value, std::memory_order_relaxed);
-                    m_sum_squares.fetch_add(std::pow(value, 2), std::memory_order_relaxed);
+                    m_sum_squares.fetch_add(std::pow<T>(value, 2), std::memory_order_relaxed);
                 }//end if constexpr (std::is_floating_point<T>::value)
                 //--------------------------
             }//end void atomic_add(std::atomic<T>& atomic, const T& value)
@@ -1243,10 +1243,10 @@ namespace CircularBuffer {
                 //--------------------------
                 if constexpr (std::is_floating_point<T>::value){
                     atomic_float_sub(m_sum, value);
-                    atomic_float_sub(m_sum_squares, std::pow(value, 2));
+                    atomic_float_sub(m_sum_squares, std::pow<T>(value, 2));
                 } else {
                     m_sum.fetch_sub(value, std::memory_order_relaxed);
-                    m_sum_squares.fetch_sub(std::pow(value, 2), std::memory_order_relaxed);
+                    m_sum_squares.fetch_sub(std::pow<T>(value, 2), std::memory_order_relaxed);
                 }//end if constexpr (std::is_floating_point<T>::value)
                 //--------------------------
             }//end void atomic_sub(std::atomic<T>& atomic, const T& value)

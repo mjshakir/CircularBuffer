@@ -904,7 +904,7 @@ namespace CircularBuffer {
                 if constexpr (std::is_arithmetic<T>::value){
                     //--------------------------
                     m_sum += item;
-                    m_sum_squares += std::pow(item, 2);
+                    m_sum_squares += std::pow<T>(item, 2);
                     //--------------------------
                 }// end if constexpr (std::is_arithmetic<T>::value)
                 //--------------------------
@@ -924,7 +924,7 @@ namespace CircularBuffer {
                     //--------------------------
                     const T& current_item_ = m_buffer.back();
                     m_sum += current_item_;
-                    m_sum_squares += std::pow(current_item_, 2);
+                    m_sum_squares += std::pow<T>(current_item_, 2);
                     //--------------------------
                 }// end if constexpr (std::is_arithmetic<T>::value)
                 //--------------------------
@@ -945,7 +945,7 @@ namespace CircularBuffer {
                     //--------------------------
                     const T& current_item_ = m_buffer.back();
                     m_sum += current_item_;
-                    m_sum_squares += std::pow(current_item_, 2);
+                    m_sum_squares += std::pow<T>(current_item_, 2);
                     //--------------------------
                 }// end if constexpr (std::is_arithmetic<T>::value)
                 //--------------------------
@@ -965,7 +965,7 @@ namespace CircularBuffer {
                 if constexpr (std::is_arithmetic<T>::value){
                     //--------------------------
                     m_sum -= value;
-                    m_sum_squares -= std::pow(value, 2);
+                    m_sum_squares -= std::pow<T>(value, 2);
                     //--------------------------
                 }// end if constexpr (std::is_arithmetic<T>::value)
                 //--------------------------
@@ -1009,7 +1009,7 @@ namespace CircularBuffer {
                     //--------------------------
                     const T& front_ = m_buffer.front();
                     m_sum -= front_;
-                    m_sum_squares -= std::pow(front_, 2);
+                    m_sum_squares -= std::pow<T>(front_, 2);
                     //--------------------------
                 }// end if constexpr (std::is_arithmetic<T>::value)
                 //--------------------------
@@ -1080,7 +1080,7 @@ namespace CircularBuffer {
                 //--------------------------
                 const double mean_ = get_mean().value_or(0.);
                 //--------------------------
-                return ((static_cast<double>(m_sum_squares) / static_cast<double>(size_)) - std::pow(mean_, 2)) * 
+                return ((static_cast<double>(m_sum_squares) / static_cast<double>(size_)) - std::pow<double>(mean_, 2)) * 
                         (static_cast<double>(size_) / static_cast<double>(size_ - 1));
                 //--------------------------
             }// end std::optional<T> get_variance(void) const
@@ -1230,7 +1230,7 @@ namespace CircularBuffer {
                     //--------------------------
                     const T& front_ = m_buffer.front();
                     m_sum -= front_;
-                    m_sum_squares -= std::pow(front_, 2);
+                    m_sum_squares -= std::pow<T>(front_, 2);
                     //--------------------------
                 }// end if constexpr (std::is_arithmetic<T>::value)
                 //--------------------------
