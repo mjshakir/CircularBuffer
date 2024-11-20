@@ -3,11 +3,6 @@
 #include <string>
 #include <random>
 #include <algorithm>
-#if __has_include(<execution>)
-    #if defined(HAS_TBB) && defined(CIRCULARBUFFER_MULTI_THREADING)
-        #include <execution>
-    #endif
-#endif
 
 // Helper function to generate random integers
 int generate_random_int() {
