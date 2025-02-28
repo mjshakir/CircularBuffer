@@ -2,16 +2,14 @@
 //--------------------------------------------------------------
 // Standard cpp library
 //--------------------------------------------------------------
-#include <iostream>
 #include <optional>
 #include <array>
 #include <atomic>
-#include <thread>
 #include <type_traits>
 #include <cstddef>
 #include <cmath>
 #include <algorithm>
-#include <tuple>
+#include <functional>
 #if __has_include(<execution>)
     #if defined(HAS_TBB) && defined(CIRCULARBUFFER_MULTI_THREADING)
         #include <execution>
@@ -849,7 +847,7 @@ namespace CircularBuffer {
             //--------------------------------------------------------------
         protected:
             //--------------------------------------------------------------
-            std::tuple<size_t, size_t> insert(void) {
+            const size_t insert(void) {
                 //--------------------------
                 size_t current_tail{0UL}, next_tail{0UL};
                 //--------------------------
@@ -858,34 +856,31 @@ namespace CircularBuffer {
                     //--------------------------
                     next_tail = increment(current_tail);
                     //--------------------------
-                    if (is_full()) {  // Buffer is full
+                    if (full()) {  // Buffer is full
                         pop_front_unsafe();
-                    }// end if (is_full())
+                    }// end if (full())
                     //--------------------------
                 } while (!m_tail.compare_exchange_weak(current_tail, next_tail, std::memory_order_release, std::memory_order_relaxed));
                 //--------------------------
-                return {current_tail, next_tail};
+                return current_tail;
                 //--------------------------
             } //end std::tuple<size_t, size_t> insert(void) const
             //--------------------------
             void push_back(const T& item) {
                 //--------------------------
-                const auto [current_tail, next_tail] = insert(); 
-                //--------------------------
-                m_buffer.at(current_tail) = item;
+                m_buffer.at(insert()) = item;
                 //--------------------------
                 if constexpr (std::is_arithmetic<T>::value){
                     atomic_add(item);
                 }//end if constexpr (std::is_arithmetic<T>::value)
                 //--------------------------
-                m_tail.store(next_tail, std::memory_order_release);
                 m_count.fetch_add(1, std::memory_order_release);
                 //--------------------------
             }//end bool push_back(const T& item)
             //--------------------------
             void push_back(T&& item) {
                 //--------------------------
-                const auto [current_tail, next_tail] = insert();
+                const size_t current_tail = insert();
                 //--------------------------
                 m_buffer.at(current_tail) = std::move(item);
                 //--------------------------
@@ -895,7 +890,6 @@ namespace CircularBuffer {
                     //--------------------------
                 }//end if constexpr (std::is_arithmetic<T>::value)
                 //--------------------------
-                m_tail.store(next_tail, std::memory_order_release);
                 m_count.fetch_add(1, std::memory_order_release);
                 //--------------------------
             }//end bool push_back(const T& item)
@@ -903,8 +897,7 @@ namespace CircularBuffer {
             template <typename... Args>
             void emplace_back(Args&&... args) {
                 //--------------------------
-                size_t current_tail{0UL};
-                std::tie(current_tail, std::ignore) = insert();
+                const size_t current_tail = insert();
                 //--------------------------
                 new (&m_buffer[current_tail]) T(std::forward<Args>(args)...);  // Construct in-place
                 //--------------------------
@@ -1017,9 +1010,9 @@ namespace CircularBuffer {
                 //--------------------------
             }// end bool is_empty(void) const
             //--------------------------
-            bool is_full(void) const {
+            bool full(void) const {
                 return m_count.load(std::memory_order_acquire) == N;
-            }// end bool is_full() const
+            }// end bool full() const
             //--------------------------
             size_t get_size(void) const  {
                 //--------------------------
@@ -1176,18 +1169,18 @@ namespace CircularBuffer {
                 }//end if (count_ == 1)
                 //--------------------------
 #if defined(HAS_TBB) && defined(CIRCULARBUFFER_MULTI_THREADING)
-                std::nth_element(std::execution::par, sorted_buffer.begin(), sorted_buffer.begin() + half_count_, sorted_buffer.end());
+                std::nth_element(std::execution::par, sorted_buffer.begin(), sorted_buffer.begin() + half_count_, sorted_buffer.begin() + count_);
 #else
-                std::nth_element(sorted_buffer.begin(), sorted_buffer.begin() + half_count_, sorted_buffer.end());
+                std::nth_element(sorted_buffer.begin(), sorted_buffer.begin() + half_count_, sorted_buffer.begin() + count_);
 #endif
                 //--------------------------
                 if (count_ % 2UL == 0) {
                     //--------------------------
                     const double median_1 = static_cast<double>(sorted_buffer.at(half_count_));
 #if defined(HAS_TBB) && defined(CIRCULARBUFFER_MULTI_THREADING)
-                    std::nth_element(std::execution::par, sorted_buffer.begin(), sorted_buffer.begin() + half_count_ - 1, sorted_buffer.end());
+                    std::nth_element(std::execution::par, sorted_buffer.begin(), sorted_buffer.begin() + half_count_ - 1, sorted_buffer.begin() + count_);
 #else
-                    std::nth_element(sorted_buffer.begin(), sorted_buffer.begin() + half_count_ - 1, sorted_buffer.end());
+                    std::nth_element(sorted_buffer.begin(), sorted_buffer.begin() + half_count_ - 1, sorted_buffer.begin() + count_);
 #endif
                     const double median_2 = static_cast<double>(sorted_buffer.at(half_count_ - 1));
                     //--------------------------
