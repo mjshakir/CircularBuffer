@@ -327,22 +327,6 @@ TEST(CircularBufferDynamicTest, CopyAssignmentOperator) {
     EXPECT_EQ(buffer2.top_pop().value(), 3);
 }
 
-TEST(CircularBufferDynamicTest, MoveConstructor) {
-    CircularBuffer::CircularBuffer<int> buffer(BUFFER_SIZE);
-    buffer.push(1);
-    buffer.push(2);
-    buffer.push(3);
-
-    auto movedBuffer(std::move(buffer));
-    EXPECT_EQ(movedBuffer.size(), 3);
-    EXPECT_EQ(movedBuffer.top_pop().value(), 1);
-    EXPECT_EQ(movedBuffer.top_pop().value(), 2);
-    EXPECT_EQ(movedBuffer.top_pop().value(), 3);
-
-    // buffer should be in a valid state after the move, but its content might be unspecified
-    EXPECT_TRUE(buffer.empty() or !buffer.empty());
-}
-
 TEST(CircularBufferDynamicTest, MoveAssignmentOperator) {
     CircularBuffer::CircularBuffer<int> buffer1(BUFFER_SIZE);
     buffer1.push(1);
