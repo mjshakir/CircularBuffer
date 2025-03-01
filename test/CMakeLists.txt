@@ -56,5 +56,4 @@ endfunction()
 # Add the tests without the 'test/' prefix since we are already in the test directory
 create_test_target(${PROJECT_NAME}_Fixed_Test   CircularBufferFixedTest.cpp)
 create_test_target(${PROJECT_NAME}_Dynamic_Test CircularBufferDynamicTest.cpp)
-create_test_target(${PROJECT_NAME}_Test         CircularBufferTest.cpp)
 #------------------------------------------------------------------------------------------
