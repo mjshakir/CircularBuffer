@@ -1238,9 +1238,9 @@ namespace CircularBuffer {
             size_t increment(const size_t& value) const {
                 if constexpr(!N) {
                     return (value + 1) % (m_max_size == 0 ? 1 : m_max_size);
+                } else {
+                    return (value + 1) % N;
                 }// end if constexpr(!N)
-                //--------------------------
-                return (value + 1) % N;
                 //--------------------------
             }// end size_t increment(const size_t& value) const
             //--------------------------
