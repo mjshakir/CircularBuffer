@@ -368,7 +368,7 @@ TEST(CircularBufferFixedTest, ExtremeStressTestDouble) {
 TEST(CircularBufferFixedTest, StressTest) {
 #ifdef _WIN32
     constexpr size_t buffer_size = 50000UL;
-    CircularBuffer::CircularBufferFixed<size_t, buffer_size> buffer;
+    CircularBuffer::CircularBuffer<size_t, buffer_size> buffer;
     for (size_t i = 0; i < 2000000UL; ++i) {
         buffer.push(i);
     }
