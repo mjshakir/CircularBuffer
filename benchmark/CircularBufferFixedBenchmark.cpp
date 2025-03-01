@@ -23,7 +23,7 @@ std::string generate_random_string() {
 
 // Benchmark push operation for integers
 static void BM_CircularBufferPushInt(benchmark::State& state) {
-    CircularBuffer::CircularBufferFixed<int, 100> buffer;
+    CircularBuffer::CircularBuffer<int, 100> buffer;
     for (auto _ : state) {
         buffer.push(generate_random_int());
     }
@@ -33,7 +33,7 @@ BENCHMARK(BM_CircularBufferPushInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity
 
 // Benchmark pop operation for integers
 static void BM_CircularBufferPopInt(benchmark::State& state) {
-    CircularBuffer::CircularBufferFixed<int, 100> buffer;
+    CircularBuffer::CircularBuffer<int, 100> buffer;
     for (int i = 0; i < state.range(0); ++i) {
         buffer.push(generate_random_int());
     }
@@ -46,7 +46,7 @@ BENCHMARK(BM_CircularBufferPopInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity(
 
 // Benchmark push operation for strings
 static void BM_CircularBufferPushString(benchmark::State& state) {
-    CircularBuffer::CircularBufferFixed<std::string, 100> buffer;
+    CircularBuffer::CircularBuffer<std::string, 100> buffer;
     for (auto _ : state) {
         buffer.push(generate_random_string());
     }
@@ -56,7 +56,7 @@ BENCHMARK(BM_CircularBufferPushString)->Arg(100)->Arg(1000)->Arg(10000)->Complex
 
 // Benchmark pop operation for strings
 static void BM_CircularBufferPopString(benchmark::State& state) {
-    CircularBuffer::CircularBufferFixed<std::string, 100> buffer;
+    CircularBuffer::CircularBuffer<std::string, 100> buffer;
     for (int i = 0; i < state.range(0); ++i) {
         buffer.push(generate_random_string());
     }
@@ -69,7 +69,7 @@ BENCHMARK(BM_CircularBufferPopString)->Arg(100)->Arg(1000)->Arg(10000)->Complexi
 
 // Benchmark top method for integers
 static void BM_CircularBufferTopInt(benchmark::State& state) {
-    CircularBuffer::CircularBufferFixed<int, 100> buffer;
+    CircularBuffer::CircularBuffer<int, 100> buffer;
     for (int i = 0; i < state.range(0); ++i) {
         buffer.push(generate_random_int());
     }
@@ -82,7 +82,7 @@ BENCHMARK(BM_CircularBufferTopInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity(
 
 // Benchmark top method for strings
 static void BM_CircularBufferTopString(benchmark::State& state) {
-    CircularBuffer::CircularBufferFixed<std::string, 100> buffer;
+    CircularBuffer::CircularBuffer<std::string, 100> buffer;
     for (int i = 0; i < state.range(0); ++i) {
         buffer.push(generate_random_string());
     }
@@ -95,7 +95,7 @@ BENCHMARK(BM_CircularBufferTopString)->Arg(100)->Arg(1000)->Arg(10000)->Complexi
 
 // Benchmark last method for integers
 static void BM_CircularBufferLastInt(benchmark::State& state) {
-    CircularBuffer::CircularBufferFixed<int, 100> buffer;
+    CircularBuffer::CircularBuffer<int, 100> buffer;
     for (int i = 0; i < state.range(0); ++i) {
         buffer.push(generate_random_int());
     }
@@ -108,7 +108,7 @@ BENCHMARK(BM_CircularBufferLastInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity
 
 // Benchmark last method for strings
 static void BM_CircularBufferLastString(benchmark::State& state) {
-    CircularBuffer::CircularBufferFixed<std::string, 100> buffer;
+    CircularBuffer::CircularBuffer<std::string, 100> buffer;
     for (int i = 0; i < state.range(0); ++i) {
         buffer.push(generate_random_string());
     }
@@ -121,7 +121,7 @@ BENCHMARK(BM_CircularBufferLastString)->Arg(100)->Arg(1000)->Arg(10000)->Complex
 
 // Benchmark sum method for integers
 static void BM_CircularBufferSumInt(benchmark::State& state) {
-    CircularBuffer::CircularBufferFixed<int, 100> buffer;
+    CircularBuffer::CircularBuffer<int, 100> buffer;
     for (int i = 0; i < state.range(0); ++i) {
         buffer.push(generate_random_int());
     }
@@ -134,7 +134,7 @@ BENCHMARK(BM_CircularBufferSumInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity(
 
 // Benchmark mean method for integers
 static void BM_CircularBufferMeanInt(benchmark::State& state) {
-    CircularBuffer::CircularBufferFixed<int, 100> buffer;
+    CircularBuffer::CircularBuffer<int, 100> buffer;
     for (int i = 0; i < state.range(0); ++i) {
         buffer.push(generate_random_int());
     }
@@ -147,7 +147,7 @@ BENCHMARK(BM_CircularBufferMeanInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity
 
 // Benchmark variance method for integers
 static void BM_CircularBufferVarianceInt(benchmark::State& state) {
-    CircularBuffer::CircularBufferFixed<int, 100> buffer;
+    CircularBuffer::CircularBuffer<int, 100> buffer;
     for (int i = 0; i < state.range(0); ++i) {
         buffer.push(generate_random_int());
     }
@@ -160,7 +160,7 @@ BENCHMARK(BM_CircularBufferVarianceInt)->Arg(100)->Arg(1000)->Arg(10000)->Comple
 
 // Benchmark standard deviation method for integers
 static void BM_CircularBufferStdDevInt(benchmark::State& state) {
-    CircularBuffer::CircularBufferFixed<int, 100> buffer;
+    CircularBuffer::CircularBuffer<int, 100> buffer;
     for (int i = 0; i < state.range(0); ++i) {
         buffer.push(generate_random_int());
     }
@@ -173,7 +173,7 @@ BENCHMARK(BM_CircularBufferStdDevInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexi
 
 // Benchmark minimum method for integers
 static void BM_CircularBufferMinInt(benchmark::State& state) {
-    CircularBuffer::CircularBufferFixed<int, 100> buffer;
+    CircularBuffer::CircularBuffer<int, 100> buffer;
     for (int i = 0; i < state.range(0); ++i) {
         buffer.push(generate_random_int());
     }
@@ -186,7 +186,7 @@ BENCHMARK(BM_CircularBufferMinInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity(
 
 // Benchmark maximum method for integers
 static void BM_CircularBufferMaxInt(benchmark::State& state) {
-    CircularBuffer::CircularBufferFixed<int, 100> buffer;
+    CircularBuffer::CircularBuffer<int, 100> buffer;
     for (int i = 0; i < state.range(0); ++i) {
         buffer.push(generate_random_int());
     }
@@ -199,7 +199,7 @@ BENCHMARK(BM_CircularBufferMaxInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexity(
 
 // Benchmark sorted method for integers
 static void BM_CircularBufferSortedInt(benchmark::State& state) {
-    CircularBuffer::CircularBufferFixed<int, 100> buffer;
+    CircularBuffer::CircularBuffer<int, 100> buffer;
     for (int i = 0; i < state.range(0); ++i) {
         buffer.push(generate_random_int());
     }
@@ -212,7 +212,7 @@ BENCHMARK(BM_CircularBufferSortedInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexi
 
 // Benchmark reverse sorted method for integers
 static void BM_CircularBufferReverseSortedInt(benchmark::State& state) {
-    CircularBuffer::CircularBufferFixed<int, 100> buffer;
+    CircularBuffer::CircularBuffer<int, 100> buffer;
     for (int i = 0; i < state.range(0); ++i) {
         buffer.push(generate_random_int());
     }
@@ -225,7 +225,7 @@ BENCHMARK(BM_CircularBufferReverseSortedInt)->Arg(100)->Arg(1000)->Arg(10000)->C
 
 // Benchmark median method for integers
 static void BM_CircularBufferMedianInt(benchmark::State& state) {
-    CircularBuffer::CircularBufferFixed<int, 100> buffer;
+    CircularBuffer::CircularBuffer<int, 100> buffer;
     for (int i = 0; i < state.range(0); ++i) {
         buffer.push(generate_random_int());
     }
@@ -238,7 +238,7 @@ BENCHMARK(BM_CircularBufferMedianInt)->Arg(100)->Arg(1000)->Arg(10000)->Complexi
 
 // Benchmark iteration over the buffer for integers
 static void BM_CircularBufferIterateInt(benchmark::State& state) {
-    CircularBuffer::CircularBufferFixed<int, 100> buffer;
+    CircularBuffer::CircularBuffer<int, 100> buffer;
     for (int i = 0; i < state.range(0); ++i) {
         buffer.push(generate_random_int());
     }
@@ -253,7 +253,7 @@ BENCHMARK(BM_CircularBufferIterateInt)->Arg(100)->Arg(1000)->Arg(10000)->Complex
 
 // Benchmark iteration over the buffer for strings
 static void BM_CircularBufferIterateString(benchmark::State& state) {
-    CircularBuffer::CircularBufferFixed<std::string, 100> buffer;
+    CircularBuffer::CircularBuffer<std::string, 100> buffer;
     for (int i = 0; i < state.range(0); ++i) {
         buffer.push(generate_random_string());
     }
