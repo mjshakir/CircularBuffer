@@ -82,7 +82,7 @@ namespace CircularBuffer {
              * }
              * @endcode
              */
-            template <typename U = T, std::enable_if_t<!std::is_arithmetic<U>::value && (N > 0UL), int> = 0>
+            template <typename U = T, std::enable_if_t<!std::is_arithmetic<U>::value && (N), int> = 0>
             CircularBuffer(void) : m_head(0UL), m_tail(0UL), m_count(0UL) {
                 //--------------------------
             }// end CircularBuffer(void)
@@ -112,7 +112,7 @@ namespace CircularBuffer {
              * }
              * @endcode
              */
-            template <typename U = T, std::enable_if_t<std::is_arithmetic<U>::value && (N > 0UL), int> = 0>
+            template <typename U = T, std::enable_if_t<std::is_arithmetic<U>::value && (N), int> = 0>
             CircularBuffer(void) : m_head(0UL), m_tail(0UL), m_count(0UL), m_sum(0UL), m_sum_squares(0UL){
                 //--------------------------
             }// end CircularBuffer(void)
@@ -138,7 +138,7 @@ namespace CircularBuffer {
              * }
              * @endcode
              */
-            template <typename U = T, std::enable_if_t<!std::is_arithmetic<U>::value && (N == 0UL), int> = 0>
+            template <typename U = T, std::enable_if_t<!std::is_arithmetic<U>::value && (!N), int> = 0>
             CircularBuffer(const size_t& size) : m_head(0UL), m_tail(0UL), m_count(0UL), m_max_size(size), m_buffer(size) {
                 //--------------------------
             }// end CircularBuffer(void)
@@ -170,7 +170,7 @@ namespace CircularBuffer {
              * }
              * @endcode
              */
-            template <typename U = T, std::enable_if_t<std::is_arithmetic<U>::value && (N == 0), int> = 0>
+            template <typename U = T, std::enable_if_t<std::is_arithmetic<U>::value && (!N), int> = 0>
             CircularBuffer(const size_t& size) :    m_head(0UL),
                                                     m_tail(0UL),
                                                     m_count(0UL),
@@ -184,7 +184,7 @@ namespace CircularBuffer {
             /**
              * @brief Copy constructor.
              *
-             * Initializes the buffer with the values from another CircularBuffer instance. This constructor
+             * @details Initializes the buffer with the values from another CircularBuffer instance. This constructor
              * performs a deep copy of the other buffer's state, including the head, tail, count, and buffer contents.
              * If the data type T is arithmetic, the sum and sum of squares are also copied.
              *
@@ -224,7 +224,7 @@ namespace CircularBuffer {
             /**
              * @brief Copy assignment operator.
              *
-             * Copies the values from another CircularBuffer instance. This operator performs a deep copy of the other
+             * @details Copies the values from another CircularBuffer instance. This operator performs a deep copy of the other
              * buffer's state, including the head, tail, count, and buffer contents. If the data type T is arithmetic, the sum
              * and sum of squares are also copied.
              *
@@ -274,7 +274,7 @@ namespace CircularBuffer {
             /**
              * @brief Move constructor.
              *
-             * Initializes the buffer by moving the values from another CircularBuffer instance. This constructor
+             * @details Initializes the buffer by moving the values from another CircularBuffer instance. This constructor
              * transfers ownership of the other buffer's state to the new buffer, leaving the other buffer in a valid but
              * unspecified state.
              *
@@ -329,7 +329,7 @@ namespace CircularBuffer {
             /**
              * @brief Pushes an item to the back of the buffer.
              *
-             * This method adds a new item to the back of the buffer. If the buffer is full, it will 
+             * @details This method adds a new item to the back of the buffer. If the buffer is full, it will 
              * remove the item from the front to make space for the new item.
              *
              * @param item The item to push.
@@ -354,7 +354,7 @@ namespace CircularBuffer {
             /**
              * @brief Pushes an item to the back of the buffer using move semantics.
              *
-             * This method adds a new item to the back of the buffer, moving the item instead of copying it. 
+             * @details This method adds a new item to the back of the buffer, moving the item instead of copying it. 
              * If the buffer is full, it will remove the item from the front to make space for the new item.
              *
              * @param item The item to push.
@@ -381,7 +381,7 @@ namespace CircularBuffer {
             /**
              * @brief Emplaces an item to the back of the buffer.
              *
-             * This method constructs a new item in place at the back of the buffer. If the buffer is full, 
+             * @details This method constructs a new item in place at the back of the buffer. If the buffer is full, 
              * it will remove the item from the front to make space for the new item.
              *
              * @tparam Args Types of arguments for constructing the item.
@@ -408,7 +408,7 @@ namespace CircularBuffer {
             /**
              * @brief Pops an item from the front of the buffer.
              *
-             * This method removes the item at the front of the buffer. If the buffer is empty, it returns false.
+             * @details This method removes the item at the front of the buffer. If the buffer is empty, it returns false.
              * If the buffer contains items, it removes the front item and returns true.
              *
              * @return True if an item was popped, false if the buffer was empty.
@@ -436,7 +436,7 @@ namespace CircularBuffer {
             /**
              * @brief Gets the top item from the buffer without removing it.
              *
-             * This method returns the item at the front of the buffer without removing it. If the buffer is empty,
+             * @details This method returns the item at the front of the buffer without removing it. If the buffer is empty,
              * it returns std::nullopt.
              *
              * @return The top item, or std::nullopt if the buffer is empty.
@@ -463,7 +463,7 @@ namespace CircularBuffer {
             /**
              * @brief Gets the last item from the buffer without removing it.
              *
-             * This method returns the item at the back of the buffer without removing it. If the buffer is empty,
+             * @details This method returns the item at the back of the buffer without removing it. If the buffer is empty,
              * it returns std::nullopt.
              *
              * @return The last item, or std::nullopt if the buffer is empty.
@@ -490,7 +490,7 @@ namespace CircularBuffer {
             /**
              * @brief Gets and pops the top item from the buffer.
              *
-             * This method returns the item at the front of the buffer and removes it. If the buffer is empty,
+             * @details This method returns the item at the front of the buffer and removes it. If the buffer is empty,
              * it returns std::nullopt.
              *
              * @return The top item, or std::nullopt if the buffer is empty.
@@ -524,7 +524,7 @@ namespace CircularBuffer {
             /**
              * @brief Checks if the buffer is empty.
              *
-             * This method returns true if the buffer is empty (i.e., it contains no elements), and false otherwise.
+             * @details This method returns true if the buffer is empty (i.e., it contains no elements), and false otherwise.
              *
              * @return True if the buffer is empty, false otherwise.
              *
@@ -550,7 +550,7 @@ namespace CircularBuffer {
             /**
              * @brief Gets the number of items in the buffer.
              *
-             * This method returns the current number of elements stored in the buffer.
+             * @details This method returns the current number of elements stored in the buffer.
              *
              * @return The number of items in the buffer.
              *
@@ -572,7 +572,7 @@ namespace CircularBuffer {
             /**
              * @brief Clears the buffer.
              *
-             * This method removes all elements from the buffer, effectively resetting it to its initial empty state.
+             * @details This method removes all elements from the buffer, effectively resetting it to its initial empty state.
              *
              * @example usage:
              * @code
@@ -596,7 +596,7 @@ namespace CircularBuffer {
             /**
              * @brief Calculates the sum of the elements in the buffer.
              *
-             * This method returns the sum of all elements currently stored in the buffer. This function is only available
+             * @details This method returns the sum of all elements currently stored in the buffer. This function is only available
              * for arithmetic types. If the buffer is empty, it returns std::nullopt.
              *
              * @return The sum of the elements, or std::nullopt if the buffer is empty.
@@ -624,7 +624,7 @@ namespace CircularBuffer {
             /**
              * @brief Calculates the mean of the elements in the buffer.
              *
-             * This method returns the mean (average) of all elements currently stored in the buffer. This function is only available
+             * @details This method returns the mean (average) of all elements currently stored in the buffer. This function is only available
              * for arithmetic types. If the buffer is empty, it returns std::nullopt.
              *
              * The mean is calculated using the following equation:
@@ -658,7 +658,7 @@ namespace CircularBuffer {
             /**
              * @brief Calculates the variance of the elements in the buffer.
              *
-             * This method returns the variance of all elements currently stored in the buffer. This function is only available
+             * @details This method returns the variance of all elements currently stored in the buffer. This function is only available
              * for arithmetic types. If the buffer is empty or contains only one element, it returns std::nullopt.
              *
              * The variance is calculated using the following equation:
@@ -694,7 +694,7 @@ namespace CircularBuffer {
             /**
              * @brief Calculates the standard deviation of the elements in the buffer.
              *
-             * This method returns the standard deviation of all elements currently stored in the buffer. This function is only available
+             * @details This method returns the standard deviation of all elements currently stored in the buffer. This function is only available
              * for arithmetic types. If the buffer is empty or contains only one element, it returns std::nullopt.
              *
              * The standard deviation is calculated as the square root of the variance:
@@ -729,7 +729,7 @@ namespace CircularBuffer {
             /**
              * @brief Finds the minimum element in the buffer.
              *
-             * This method returns the minimum element currently stored in the buffer. This function is only available
+             * @details This method returns the minimum element currently stored in the buffer. This function is only available
              * for arithmetic types. If the buffer is empty, it returns std::nullopt.
              *
              * @return The minimum element, or std::nullopt if the buffer is empty.
@@ -759,7 +759,7 @@ namespace CircularBuffer {
             /**
              * @brief Finds the maximum element in the buffer.
              *
-             * This method returns the maximum element currently stored in the buffer. This function is only available
+             * @details This method returns the maximum element currently stored in the buffer. This function is only available
              * for arithmetic types. If the buffer is empty, it returns std::nullopt.
              *
              * @return The maximum element, or std::nullopt if the buffer is empty.
@@ -789,7 +789,7 @@ namespace CircularBuffer {
             /**
              * @brief Returns a sorted copy of the buffer.
              *
-             * This method returns a sorted copy of all elements currently stored in the buffer in ascending order. 
+             * @details This method returns a sorted copy of all elements currently stored in the buffer in ascending order. 
              * This function is only available for arithmetic types. If the buffer is empty, it returns std::nullopt.
              *
              * @return A sorted std::array of the elements, or std::nullopt if the buffer is empty.
@@ -816,14 +816,14 @@ namespace CircularBuffer {
              * @endcode
              */
             template <typename U = T>
-            std::enable_if_t<std::is_arithmetic<U>::value && (N > 0), std::optional<std::array<T, N>>> sorted(void) const {
+            std::enable_if_t<std::is_arithmetic<U>::value && (N), std::optional<std::array<T, N>>> sorted(void) const {
                 return get_sorted();
             }//end std::optional<std::array<T, N>> sorted(void) const
             //--------------------------
             /**
              * @brief Returns a reverse sorted copy of the buffer.
              *
-             * This method returns a reverse sorted copy of all elements currently stored in the buffer in descending order.
+             * @details This method returns a reverse sorted copy of all elements currently stored in the buffer in descending order.
              * This function is only available for arithmetic types. If the buffer is empty, it returns std::nullopt.
              *
              * @return A reverse sorted std::array of the elements, or std::nullopt if the buffer is empty.
@@ -850,14 +850,14 @@ namespace CircularBuffer {
              * @endcode
              */
             template <typename U = T>
-            std::enable_if_t<std::is_arithmetic<U>::value && (N > 0), std::optional<std::array<T, N>>> reverse_sorted(void) const {
+            std::enable_if_t<std::is_arithmetic<U>::value && (N), std::optional<std::array<T, N>>> reverse_sorted(void) const {
                 return get_reverse_sorted();
             }//end std::optional<std::array<T, N>> reverse_sorted(void) const
             //--------------------------
             /**
              * @brief Returns a sorted copy of the buffer.
              *
-             * This method returns a sorted copy of all elements currently stored in the buffer in ascending order. 
+             * @details This method returns a sorted copy of all elements currently stored in the buffer in ascending order. 
              * This function is only available for arithmetic types. If the buffer is empty, it returns std::nullopt.
              *
              * @return A sorted std::array of the elements, or std::nullopt if the buffer is empty.
@@ -884,14 +884,14 @@ namespace CircularBuffer {
              * @endcode
              */
             template <typename U = T>
-            std::enable_if_t<std::is_arithmetic<U>::value && (N == 0), std::optional<std::vector<T>>> sorted(void) const {
+            std::enable_if_t<std::is_arithmetic<U>::value && (!N), std::optional<std::vector<T>>> sorted(void) const {
                 return get_sorted();
             }//end std::optional<std::vector<T>> sorted(void) const
             //--------------------------
             /**
              * @brief Returns a reverse sorted copy of the buffer.
              *
-             * This method returns a reverse sorted copy of all elements currently stored in the buffer in descending order.
+             * @details This method returns a reverse sorted copy of all elements currently stored in the buffer in descending order.
              * This function is only available for arithmetic types. If the buffer is empty, it returns std::nullopt.
              *
              * @return A reverse sorted std::array of the elements, or std::nullopt if the buffer is empty.
@@ -918,14 +918,14 @@ namespace CircularBuffer {
              * @endcode
              */
             template <typename U = T>
-            std::enable_if_t<std::is_arithmetic<U>::value && (N == 0), std::optional<std::vector<T>>> reverse_sorted(void) const {
+            std::enable_if_t<std::is_arithmetic<U>::value && (!N), std::optional<std::vector<T>>> reverse_sorted(void) const {
                 return get_reverse_sorted();
             }//end std::optional<std::vector<T>> reverse_sorted(void) const
             //--------------------------
             /**
              * @brief Calculates the median of the elements in the buffer.
              *
-             * This method returns the median of all elements currently stored in the buffer. This function is only available
+             * @details This method returns the median of all elements currently stored in the buffer. This function is only available
              * for arithmetic types. If the buffer is empty, it returns std::nullopt.
              *
              * The median is obtained by first copying the elements to a temporary buffer, using std::nth_element to partially sort
@@ -959,82 +959,82 @@ namespace CircularBuffer {
             }//end std::optional<T> median(void) const
             //--------------------------
             template <size_t M = N>
-            std::enable_if_t<(M > 0), typename std::array<T, N>::iterator> begin(void) {
+            std::enable_if_t<(M), typename std::array<T, N>::iterator> begin(void) {
                 return m_buffer.begin();
             }//end typename std::array<T, N>::iterator begin(void)
             //--------------------------
             template <size_t M = N>
-            std::enable_if_t<(M > 0), typename std::array<T, N>::iterator> end(void) {
+            std::enable_if_t<(M), typename std::array<T, N>::iterator> end(void) {
                 return m_buffer.end();
             }// end typename std::array<T, N>::iterator
             //--------------------------
             template <size_t M = N>
-            std::enable_if_t<(M > 0), typename std::array<T, N>::const_iterator> begin(void) const {
+            std::enable_if_t<(M), typename std::array<T, N>::const_iterator> begin(void) const {
                 return m_buffer.begin();
             }// end typename std::array<T, N>::const_iterator begin(void) const
             //--------------------------
             template <size_t M = N>
-            std::enable_if_t<(M > 0), typename std::array<T, N>::const_iterator> end(void) const {
+            std::enable_if_t<(M), typename std::array<T, N>::const_iterator> end(void) const {
                 return m_buffer.end();
             }//end typename std::array<T, N>::const_iterator end(void) const
             //--------------------------
             template <size_t M = N>
-            std::enable_if_t<(M > 0), typename std::array<T, N>::const_iterator> cbegin(void) const {
+            std::enable_if_t<(M), typename std::array<T, N>::const_iterator> cbegin(void) const {
                 return m_buffer.cbegin();
             }//end typename std::array<T, N>::const_iterator cbegin(void) const
             //--------------------------
             template <size_t M = N>
-            std::enable_if_t<(M > 0), typename std::array<T, N>::const_iterator> cend(void) const {
+            std::enable_if_t<(M), typename std::array<T, N>::const_iterator> cend(void) const {
                 return m_buffer.cend();
             }//end typename std::array<T, N>::const_iterator cend(void) const
             //--------------------------
             template <size_t M = N>
-            std::enable_if_t<(M > 0), typename std::array<T, N>::reverse_iterator> rbegin(void) {
+            std::enable_if_t<(M), typename std::array<T, N>::reverse_iterator> rbegin(void) {
                 return m_buffer.rbegin();
             }//end typename std::array<T, N>::reverse_iterator rbegin(void)
             //--------------------------
             template <size_t M = N>
-            std::enable_if_t<(M > 0), typename std::array<T, N>::reverse_iterator> rend(void) {
+            std::enable_if_t<(M), typename std::array<T, N>::reverse_iterator> rend(void) {
                 return m_buffer.rend();
             }//end typename std::array<T, N>::reverse_iterator rend(void)
             //--------------------------
             template <size_t M = N>
-            std::enable_if_t<(M == 0), typename std::vector<T>::iterator> begin(void) {
+            std::enable_if_t<(!M), typename std::vector<T>::iterator> begin(void) {
                 return m_buffer.begin();
             }//end typename std::vector<T>::iterator begin(void)
             //--------------------------
             template <size_t M = N>
-            std::enable_if_t<(M == 0), typename std::vector<T>::iterator> end(void) {
+            std::enable_if_t<(!M), typename std::vector<T>::iterator> end(void) {
                 return m_buffer.end();
             }// end typename std::vector<T>::iterator
             //--------------------------
             template <size_t M = N>
-            std::enable_if_t<(M == 0), typename std::vector<T>::const_iterator> begin(void) const {
+            std::enable_if_t<(!M), typename std::vector<T>::const_iterator> begin(void) const {
                 return m_buffer.begin();
             }// end typename std::vector<T>::const_iterator begin(void) const
             //--------------------------
             template <size_t M = N>
-            std::enable_if_t<(M == 0), typename std::vector<T>::const_iterator> end(void) const {
+            std::enable_if_t<(!M), typename std::vector<T>::const_iterator> end(void) const {
                 return m_buffer.end();
             }//end typename std::vector<T>::const_iterator end(void) const
             //--------------------------
             template <size_t M = N>
-            std::enable_if_t<(M == 0), typename std::vector<T>::const_iterator> cbegin(void) const {
+            std::enable_if_t<(!M), typename std::vector<T>::const_iterator> cbegin(void) const {
                 return m_buffer.cbegin();
             }//end typename std::vector<T>::const_iterator cbegin(void) const
             //--------------------------
             template <size_t M = N>
-            std::enable_if_t<(M == 0), typename std::vector<T>::const_iterator> cend(void) const {
+            std::enable_if_t<(!M), typename std::vector<T>::const_iterator> cend(void) const {
                 return m_buffer.cend();
             }//end typename std::vector<T>::const_iterator cend(void) const
             //--------------------------
             template <size_t M = N>
-            std::enable_if_t<(M == 0), typename std::vector<T>::reverse_iterator> rbegin(void) {
+            std::enable_if_t<(!M), typename std::vector<T>::reverse_iterator> rbegin(void) {
                 return m_buffer.rbegin();
             }//end typename std::vector<T>::reverse_iterator rbegin(void)
             //--------------------------
             template <size_t M = N>
-            std::enable_if_t<(M == 0), typename std::vector<T>::reverse_iterator> rend(void) {
+            std::enable_if_t<(!M), typename std::vector<T>::reverse_iterator> rend(void) {
                 return m_buffer.rend();
             }//end typename std::vector<T>::reverse_iterator rend(void)
             //--------------------------------------------------------------
@@ -1245,7 +1245,7 @@ namespace CircularBuffer {
             }// end size_t increment(const size_t& value) const
             //--------------------------
             template <size_t M = N>
-            std::enable_if_t<(M == 0), size_t> increment(const size_t& value) const {
+            std::enable_if_t<(!M), size_t> increment(const size_t& value) const {
                 return (value + 1) % (m_max_size == 0 ? 1 : m_max_size); 
             }// end size_t increment(const size_t& value) const
             //--------------------------
@@ -1333,7 +1333,7 @@ namespace CircularBuffer {
             }//end std::optional<T> get_max(void) const
             //--------------------------
             template <typename U = T>
-            std::enable_if_t<std::is_arithmetic<U>::value && (N > 0), std::optional<std::array<T, N>>> get_sorted(void) const {
+            std::enable_if_t<std::is_arithmetic<U>::value && (N), std::optional<std::array<T, N>>> get_sorted(void) const {
                 //--------------------------
                 if(is_empty()){
                     return std::nullopt;
@@ -1350,7 +1350,7 @@ namespace CircularBuffer {
             }//end std::optional<std::array<T, N>> get_sorted(void) const
             //--------------------------
             template <typename U = T>
-            std::enable_if_t<std::is_arithmetic<U>::value && (N > 0), std::optional<std::array<T, N>>> get_reverse_sorted(void) const {
+            std::enable_if_t<std::is_arithmetic<U>::value && (N), std::optional<std::array<T, N>>> get_reverse_sorted(void) const {
                 //--------------------------
                 if(is_empty()){
                     return std::nullopt;
@@ -1367,7 +1367,7 @@ namespace CircularBuffer {
             }//end std::optional<std::array<T, N>> get_reverse_sorted(void) const
             //--------------------------
             template <typename U = T>
-            std::enable_if_t<std::is_arithmetic<U>::value && (N == 0), std::optional<std::vector<T>>> get_sorted(void) const {
+            std::enable_if_t<std::is_arithmetic<U>::value && (!N), std::optional<std::vector<T>>> get_sorted(void) const {
                 //--------------------------
                 if(is_empty()){
                     return std::nullopt;
@@ -1384,7 +1384,7 @@ namespace CircularBuffer {
             }//end std::optional<std::vector<T>> get_sorted(void) const
             //--------------------------
             template <typename U = T>
-            std::enable_if_t<std::is_arithmetic<U>::value && (N == 0), std::optional<std::vector<T>>> get_reverse_sorted(void) const {
+            std::enable_if_t<std::is_arithmetic<U>::value && (!N), std::optional<std::vector<T>>> get_reverse_sorted(void) const {
                 //--------------------------
                 if(is_empty()){
                     return std::nullopt;
@@ -1495,8 +1495,8 @@ namespace CircularBuffer {
             //--------------------------------------------------------------
             std::atomic<size_t> m_head, m_tail, m_count;
             typename std::conditional<std::is_arithmetic<T>::value, std::atomic<T>, std::nullptr_t>::type m_sum, m_sum_squares;
-            typename std::conditional<(N == 0), size_t, std::nullptr_t>::type m_max_size;
-            typename std::conditional<(N == 0), std::vector<T>, std::array<T, N>>::type m_buffer;
+            typename std::conditional<(!N), size_t, std::nullptr_t>::type m_max_size;
+            typename std::conditional<(!N), std::vector<T>, std::array<T, N>>::type m_buffer;
             //--------------------------
             void pop_front_unsafe(void)  {
                 //--------------------------
