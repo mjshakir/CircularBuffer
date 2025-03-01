@@ -64,7 +64,7 @@ int main() {
             buffer.push(i);  // Wrap around after 10
         }
 
-#ifdef __APPLE__
+#ifndef __APPLE__
         std::cout << "Fixed Span Test: ";
         // Try to obtain a span from the buffer
         printSpan<size_t>(buffer);
