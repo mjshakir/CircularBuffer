@@ -1040,7 +1040,7 @@ namespace CircularBuffer {
             //--------------------------------------------------------------
         protected:
             //--------------------------------------------------------------
-            const size_t insert(void) {
+            size_t insert(void) {
                 //--------------------------
                 size_t current_tail{0UL}, next_tail{0UL};
                 //--------------------------
@@ -1057,7 +1057,31 @@ namespace CircularBuffer {
                 //--------------------------
                 return current_tail;
                 //--------------------------
-            } //end std::tuple<size_t, size_t> insert(void) const
+            } //end size_t insert(void)
+            //--------------------------
+            std::optional<size_t> read_insert(void) {
+                //--------------------------
+                size_t current_head{0}, next_head{0};
+                //--------------------------
+                do {
+                    //--------------------------
+                    current_head = m_head.load(std::memory_order_acquire);
+                    //--------------------------
+                    if (is_empty()) {
+                        //--------------------------
+                        return std::nullopt;
+                        //--------------------------
+                    }// end if (is_empty())
+                    //--------------------------
+                    next_head = increment(current_head);
+                    //--------------------------
+                } while (!m_head.compare_exchange_weak(current_head, next_head,
+                                                    std::memory_order_release,
+                                                    std::memory_order_relaxed));
+                //--------------------------
+                return current_head;
+                //--------------------------
+            } //end std::optional<size_t> read_insert(void) 
             //--------------------------
             void push_back(const T& item) {
                 //--------------------------
@@ -1135,27 +1159,15 @@ namespace CircularBuffer {
             //--------------------------
             std::optional<T> get_top_pop(void)  {
                 //--------------------------
-                size_t current_head{0}, next_head{0};
+                const std::optional<size_t> current_head = read_insert();
                 //--------------------------
-                do {
-                    //--------------------------
-                    current_head = m_head.load(std::memory_order_acquire);
-                    //--------------------------
-                    if (is_empty()) {
-                        //--------------------------
-                        return std::nullopt;
-                        //--------------------------
-                    }// end if (is_empty())
-                    //--------------------------
-                    next_head = increment(current_head);
-                    //--------------------------
-                } while (!m_head.compare_exchange_weak(current_head, next_head,
-                                                    std::memory_order_release,
-                                                    std::memory_order_relaxed));
+                if (!current_head) {
+                    return std::nullopt;
+                }// end if (!current_head)
                 //--------------------------
-                T value = m_buffer.at(current_head);
+                T value = m_buffer.at(current_head.value());
                 //--------------------------
-                m_buffer[current_head].~T();
+                m_buffer[current_head.value()].~T();
                 //--------------------------
                 if constexpr (std::is_arithmetic<T>::value) {
                     //--------------------------
@@ -1171,33 +1183,21 @@ namespace CircularBuffer {
             //--------------------------
             bool pop_front(void) {
                 //--------------------------
-                size_t current_head{0}, next_head{0};
+                const std::optional<size_t> current_head = read_insert();
                 //--------------------------
-                do {
-                    //--------------------------
-                    current_head = m_head.load(std::memory_order_acquire);
-                    //--------------------------
-                    if (is_empty()) {
-                        return false; // Buffer is empty, nothing to pop
-                    }// end if (is_empty())
-                    //--------------------------
-                    next_head = increment(current_head);
-                    //--------------------------
-                } while (!m_head.compare_exchange_weak(current_head, next_head,
-                                                    std::memory_order_release,
-                                                    std::memory_order_relaxed));
+                if (!current_head) {
+                    return false;
+                }// end if (!current_head)
                 //--------------------------
                 if constexpr (std::is_arithmetic<T>::value){
                     //--------------------------
-                    atomic_sub(m_buffer.at(current_head));
+                    atomic_sub(m_buffer.at(current_head.value()));
                     //--------------------------
                 }//end if constexpr (std::is_arithmetic<T>::value)
                 //--------------------------
-                m_buffer[current_head].~T();
+                m_buffer[current_head.value()].~T();
                 //--------------------------
-                // Decrement the count of elements
-                //--------------------------
-                m_count.fetch_sub(1, std::memory_order_acq_rel); // Using acq_rel for decrement to ensure total order with increment operations
+                m_count.fetch_sub(1, std::memory_order_acq_rel);
                 //--------------------------
                 return true;
                 //--------------------------
