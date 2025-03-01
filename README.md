@@ -1,6 +1,6 @@
 # CircularBuffer
 
-`CircularBuffer` is a C++ implementation of a circular buffer that can either use a fixed-size buffer with `std::array` in a lock-free manner or a dynamic buffer with `std::deque` in a thread-safe manner. This makes it a versatile choice for different performance and usage needs.
+`CircularBuffer` is a C++ implementation of a circular buffer that can either use a fixed-size buffer with `std::array` in a lock-free manner or a dynamic buffer with `std::vector` in a thread-safe manner. This makes it a versatile choice for different performance and usage needs.
 
 ## Build Status
 
@@ -17,7 +17,7 @@ Benchmark results are generated for each commit and pull request. You can view t
 ## Features
 
 - **Lock-Free Implementation** using `std::array` for environments where low latency is critical.
-- **Thread-Safe Implementation** using `std::deque` suitable for dynamic buffer size management.
+- **Lock-Free Implementation** using `std::vector` suitable for dynamic buffer size management.
 - **Configurable** for either static or dynamic memory usage.
 
 ## Getting Started
