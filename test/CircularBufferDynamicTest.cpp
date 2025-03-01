@@ -15,14 +15,13 @@
 //--------------------------------------------------------------
 // User Defined library
 //--------------------------------------------------------------
-// #include "CircularBufferDynamic.hpp"
-#include "CircularBufferFixed.hpp"
+#include "CircularBuffer.hpp"
 
 constexpr size_t BUFFER_SIZE = 5UL;
 
 // Test basic push and pop functionality
 TEST(CircularBufferDynamicTest, PushAndPop) {
-    CircularBuffer::CircularBufferFixed<size_t> buffer(BUFFER_SIZE);
+    CircularBuffer::CircularBuffer<size_t> buffer(BUFFER_SIZE);
     buffer.push(1);
     ASSERT_FALSE(buffer.empty());
     auto result = buffer.top_pop();
@@ -32,7 +31,7 @@ TEST(CircularBufferDynamicTest, PushAndPop) {
 }
 
 TEST(CircularBufferDynamicTest, CapacityLimits) {
-    CircularBuffer::CircularBufferFixed<size_t> buffer(BUFFER_SIZE);
+    CircularBuffer::CircularBuffer<size_t> buffer(BUFFER_SIZE);
     constexpr size_t buffer_size = BUFFER_SIZE;
     for (size_t i = 0; i < buffer_size; ++i) {
         buffer.push(i);
@@ -45,7 +44,7 @@ TEST(CircularBufferDynamicTest, CapacityLimits) {
 }
 
 TEST(CircularBufferDynamicTest, BoundaryConditions) {
-    CircularBuffer::CircularBufferFixed<size_t> buffer(BUFFER_SIZE);
+    CircularBuffer::CircularBuffer<size_t> buffer(BUFFER_SIZE);
     constexpr size_t buffer_size = 9UL;
     for (size_t i = 0; i < buffer_size; ++i) {  // Fill buffer one less than capacity
         buffer.push(i);
@@ -56,7 +55,7 @@ TEST(CircularBufferDynamicTest, BoundaryConditions) {
 }
 
 TEST(CircularBufferDynamicTest, StressRobustness) {
-    CircularBuffer::CircularBufferFixed<size_t> buffer(BUFFER_SIZE);
+    CircularBuffer::CircularBuffer<size_t> buffer(BUFFER_SIZE);
     constexpr size_t buffer_size = 1000000UL;
     try {
         for (size_t i = 0; i < buffer_size; ++i) {
@@ -69,7 +68,7 @@ TEST(CircularBufferDynamicTest, StressRobustness) {
 }
 
 TEST(CircularBufferDynamicTest, MemoryAndResourceManagement) {
-    CircularBuffer::CircularBufferFixed<size_t> buffer(BUFFER_SIZE);
+    CircularBuffer::CircularBuffer<size_t> buffer(BUFFER_SIZE);
     constexpr size_t count = 1000UL;
     // Push elements into the buffer.
     for (size_t i = 0; i < count; ++i) {
@@ -86,7 +85,7 @@ TEST(CircularBufferDynamicTest, MemoryAndResourceManagement) {
 
 // Test wrap-around behavior
 TEST(CircularBufferDynamicTest, WrapAround) {
-    CircularBuffer::CircularBufferFixed<size_t> buffer(BUFFER_SIZE);
+    CircularBuffer::CircularBuffer<size_t> buffer(BUFFER_SIZE);
     constexpr size_t buffer_size = BUFFER_SIZE;
     for (size_t i = 0; i < buffer_size; ++i) {
         buffer.push(i);
@@ -99,7 +98,7 @@ TEST(CircularBufferDynamicTest, WrapAround) {
 
 // Test thread safety by using multiple threads to push and pop concurrently
 TEST(CircularBufferDynamicTest, ExtremeStressWithThreads) {
-    CircularBuffer::CircularBufferFixed<size_t> buffer(BUFFER_SIZE);
+    CircularBuffer::CircularBuffer<size_t> buffer(BUFFER_SIZE);
     constexpr size_t num_threads            = 100UL;
     constexpr size_t operations_per_thread  = 10000UL;  // Each thread does 5000 pushes and 5000 pops
     constexpr size_t buffer_capacity        = BUFFER_SIZE;  // Fixed buffer size
@@ -149,7 +148,7 @@ TEST(CircularBufferDynamicTest, ExtremeStressWithThreads) {
 
 // Test that ensures buffer correctly overwrites old data
 TEST(CircularBufferDynamicTest, OverwriteOldEntries) {
-    CircularBuffer::CircularBufferFixed<size_t> buffer(BUFFER_SIZE);
+    CircularBuffer::CircularBuffer<size_t> buffer(BUFFER_SIZE);
     // Push up to capacity
     for (size_t i = 1; i <= BUFFER_SIZE; ++i) {
         buffer.push(i);
@@ -179,7 +178,7 @@ TEST(CircularBufferDynamicTest, OverwriteOldEntries) {
 }
 
 TEST(CircularBufferDynamicTest, BasicOperations) {
-    CircularBuffer::CircularBufferFixed<size_t> buffer(BUFFER_SIZE);
+    CircularBuffer::CircularBuffer<size_t> buffer(BUFFER_SIZE);
     // Test empty buffer
     EXPECT_TRUE(buffer.empty());
     EXPECT_EQ(buffer.size(), 0);
@@ -210,7 +209,7 @@ TEST(CircularBufferDynamicTest, BasicOperations) {
 }
 
 TEST(CircularBufferDynamicTest, Overflow) {
-    CircularBuffer::CircularBufferFixed<size_t> buffer(3UL);
+    CircularBuffer::CircularBuffer<size_t> buffer(3UL);
     buffer.push(1);
     buffer.push(2);
     buffer.push(3);
@@ -226,7 +225,7 @@ TEST(CircularBufferDynamicTest, Overflow) {
 }
 
 TEST(CircularBufferDynamicTest, Reset) {
-    CircularBuffer::CircularBufferFixed<size_t> buffer(BUFFER_SIZE);
+    CircularBuffer::CircularBuffer<size_t> buffer(BUFFER_SIZE);
     buffer.push(1);
     buffer.push(2);
     buffer.reset();
@@ -236,7 +235,7 @@ TEST(CircularBufferDynamicTest, Reset) {
 
 
 TEST(CircularBufferDynamicTest, Emplace) {
-    CircularBuffer::CircularBufferFixed<std::pair<int, int>> buffer(3UL);
+    CircularBuffer::CircularBuffer<std::pair<int, int>> buffer(3UL);
     buffer.emplace(1, 2);
     buffer.emplace(3, 4);
     EXPECT_EQ(buffer.size(), 2);
@@ -250,7 +249,7 @@ TEST(CircularBufferDynamicTest, Emplace) {
 
 
 TEST(CircularBufferDynamicTest, AlmostFullStatistics) {
-    CircularBuffer::CircularBufferFixed<size_t> buffer(BUFFER_SIZE);
+    CircularBuffer::CircularBuffer<size_t> buffer(BUFFER_SIZE);
     buffer.push(1);
     buffer.push(2);
     buffer.push(3);
@@ -265,7 +264,7 @@ TEST(CircularBufferDynamicTest, AlmostFullStatistics) {
 }
 
 TEST(CircularBufferDynamicTest, SingleElementStatistics) {
-    CircularBuffer::CircularBufferFixed<size_t> buffer(BUFFER_SIZE);;
+    CircularBuffer::CircularBuffer<size_t> buffer(BUFFER_SIZE);;
     buffer.push(1);
 
     EXPECT_DOUBLE_EQ(buffer.sum().value(), 1);
@@ -276,7 +275,7 @@ TEST(CircularBufferDynamicTest, SingleElementStatistics) {
 }
 
 TEST(CircularBufferDynamicTest, FloatStatistics) {
-    CircularBuffer::CircularBufferFixed<float> buffer(BUFFER_SIZE);
+    CircularBuffer::CircularBuffer<float> buffer(BUFFER_SIZE);
 
     // Add floating-point numbers
     buffer.push(1.5);
@@ -303,7 +302,7 @@ TEST(CircularBufferDynamicTest, FloatStatistics) {
 }
 
 TEST(CircularBufferDynamicTest, CopyConstructor) {
-    CircularBuffer::CircularBufferFixed<int> buffer(3UL);
+    CircularBuffer::CircularBuffer<int> buffer(3UL);
     buffer.push(1);
     buffer.push(2);
     buffer.push(3);
@@ -316,7 +315,7 @@ TEST(CircularBufferDynamicTest, CopyConstructor) {
 }
 
 TEST(CircularBufferDynamicTest, CopyAssignmentOperator) {
-    CircularBuffer::CircularBufferFixed<int> buffer1(BUFFER_SIZE);
+    CircularBuffer::CircularBuffer<int> buffer1(BUFFER_SIZE);
     buffer1.push(1);
     buffer1.push(2);
     buffer1.push(3);
@@ -329,7 +328,7 @@ TEST(CircularBufferDynamicTest, CopyAssignmentOperator) {
 }
 
 TEST(CircularBufferDynamicTest, MoveConstructor) {
-    CircularBuffer::CircularBufferFixed<int> buffer(BUFFER_SIZE);
+    CircularBuffer::CircularBuffer<int> buffer(BUFFER_SIZE);
     buffer.push(1);
     buffer.push(2);
     buffer.push(3);
@@ -345,7 +344,7 @@ TEST(CircularBufferDynamicTest, MoveConstructor) {
 }
 
 TEST(CircularBufferDynamicTest, MoveAssignmentOperator) {
-    CircularBuffer::CircularBufferFixed<int> buffer1(BUFFER_SIZE);
+    CircularBuffer::CircularBuffer<int> buffer1(BUFFER_SIZE);
     buffer1.push(1);
     buffer1.push(2);
     buffer1.push(3);
@@ -361,7 +360,7 @@ TEST(CircularBufferDynamicTest, MoveAssignmentOperator) {
 }
 
 TEST(CircularBufferDynamicTest, ExtremeStressTest) {
-    CircularBuffer::CircularBufferFixed<size_t> buffer(10UL);
+    CircularBuffer::CircularBuffer<size_t> buffer(10UL);
     for (size_t i = 0; i < 2000000UL; ++i) {
         buffer.push(i);
     }
@@ -386,7 +385,7 @@ TEST(CircularBufferDynamicTest, ExtremeStressTest) {
 }
 
 TEST(CircularBufferDynamicTest, ExtremeStressTestDouble) {
-    CircularBuffer::CircularBufferFixed<double> buffer(10UL);
+    CircularBuffer::CircularBuffer<double> buffer(10UL);
     for (size_t i = 0; i < 2000000; ++i) {
         buffer.push(static_cast<double>(i) + 0.5);
     }
@@ -418,7 +417,7 @@ TEST(CircularBufferDynamicTest, StressTest) {
 #else
     constexpr size_t buffer_size = 500000UL;
 #endif
-    CircularBuffer::CircularBufferFixed<size_t> buffer(buffer_size);
+    CircularBuffer::CircularBuffer<size_t> buffer(buffer_size);
     for (size_t i = 0; i < 2000000UL; ++i) {
         buffer.push(i);
     }
@@ -467,7 +466,7 @@ void empty_buffer(T& buffer, const size_t& count) {
 }
 
 TEST(CircularBufferDynamicTest, SingleProducerSingleConsumer) {
-    CircularBuffer::CircularBufferFixed<size_t> buffer(100UL);
+    CircularBuffer::CircularBuffer<size_t> buffer(100UL);
     std::atomic<bool> done(false);
 
     std::thread producer([&buffer, &done]() {
@@ -489,7 +488,7 @@ TEST(CircularBufferDynamicTest, SingleProducerSingleConsumer) {
 
 // Multiple Producers, 1 Consumer
 TEST(CircularBufferDynamicTest, MultipleProducersSingleConsumer) {
-    CircularBuffer::CircularBufferFixed<size_t> buffer(100UL);
+    CircularBuffer::CircularBuffer<size_t> buffer(100UL);
     std::atomic<size_t> produced_count(0UL);
     constexpr size_t items_to_produce = 1000UL;
     std::condition_variable cv;
@@ -532,7 +531,7 @@ TEST(CircularBufferDynamicTest, MultipleProducersSingleConsumer) {
 
 // 1 Producer, Multiple Consumers
 TEST(CircularBufferDynamicTest, SingleProducerMultipleConsumers) {
-    CircularBuffer::CircularBufferFixed<size_t> buffer(100);
+    CircularBuffer::CircularBuffer<size_t> buffer(100);
     constexpr size_t items_to_produce = 1000UL;
     std::atomic<size_t> consumed_count(0UL);
     std::atomic<size_t> produced_count(0UL);
@@ -576,7 +575,7 @@ TEST(CircularBufferDynamicTest, SingleProducerMultipleConsumers) {
 
 // Multiple Producers, Multiple Consumers
 TEST(CircularBufferDynamicTest, MultipleProducersMultipleConsumers) {
-    CircularBuffer::CircularBufferFixed<size_t> buffer(100UL);
+    CircularBuffer::CircularBuffer<size_t> buffer(100UL);
     constexpr size_t items_to_produce = 1000UL;
     std::atomic<size_t> produced_count(0UL);
     std::atomic<size_t> consumed_count(0UL);
