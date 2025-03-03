@@ -64,11 +64,10 @@ int main() {
             buffer.push(i);  // Wrap around after 10
         }
 
-#ifndef __APPLE__
         std::cout << "Fixed Span Test: ";
         // Try to obtain a span from the buffer
         printSpan<size_t>(buffer);
-#endif        
+     
         std::cout << "Fixed top_pop Test: ";
         while(!buffer.empty()) {
             auto value = buffer.top_pop();
