@@ -63,6 +63,28 @@ namespace CircularBuffer {
         //--------------------------------------------------------------
         public:
             //--------------------------------------------------------------
+            using value_type             = T;
+            using reference              = value_type&;
+            using const_reference        = const value_type&;
+            using pointer                = value_type*;
+            using const_pointer          = const value_type*;
+            using size_type              = size_t;
+            using difference_type        = std::ptrdiff_t;
+            using iterator               = typename std::conditional<(N == 0), 
+                                            typename std::vector<T>::iterator, 
+                                            typename std::array<T, N>::iterator>::type;
+            using const_iterator         = typename std::conditional<(N == 0), 
+                                            typename std::vector<T>::const_iterator, 
+                                            typename std::array<T, N>::const_iterator>::type;
+            using reverse_iterator       = typename std::conditional<(N == 0), 
+                                            typename std::vector<T>::reverse_iterator, 
+                                            typename std::array<T, N>::reverse_iterator>::type;
+            using const_reverse_iterator = typename std::conditional<(N == 0), 
+                                            typename std::vector<T>::const_reverse_iterator, 
+                                            typename std::array<T, N>::const_reverse_iterator>::type;
+            //--------------------------------------------------------------
+        public:
+            //--------------------------------------------------------------
             /**
              * @brief Default constructor for non-arithmetic types.
              *
@@ -139,7 +161,7 @@ namespace CircularBuffer {
              * @endcode
              */
             template <typename U = T, std::enable_if_t<!std::is_arithmetic<U>::value && (N == 0), int> = 0>
-            CircularBuffer(const size_t& size) : m_head(0UL), m_tail(0UL), m_count(0UL), m_max_size(size), m_buffer(size) {
+            CircularBuffer(const size_type& size) : m_head(0UL), m_tail(0UL), m_count(0UL), m_max_size(size), m_buffer(size) {
                 //--------------------------
             }// end CircularBuffer(void)
             //--------------------------
@@ -171,7 +193,7 @@ namespace CircularBuffer {
              * @endcode
              */
             template <typename U = T, std::enable_if_t<std::is_arithmetic<U>::value && (N == 0), int> = 0>
-            CircularBuffer(const size_t& size) :    m_head(0UL),
+            CircularBuffer(const size_type& size) :    m_head(0UL),
                                                     m_tail(0UL),
                                                     m_count(0UL),
                                                     m_sum(0UL),
@@ -565,9 +587,28 @@ namespace CircularBuffer {
              * std::cout << "Buffer size: " << buffer.size() << std::endl; // Output: Buffer size: 3
              * @endcode
              */
-            size_t size(void) const {   
+            size_type size(void) const {   
                 return get_size();
-            }// end size_t size(void) const
+            }// end size_type size(void) const
+            //--------------------------
+            /**
+             * @brief Gets the maximum size of the buffer.
+             *
+             * @details This method returns the maximum number of elements that the buffer can store. If the buffer is dynamic-size,
+             * it returns the current maximum size of the buffer.
+             *
+             * @return The maximum size of the buffer.
+             *
+             * @example usage:
+             * @code
+             * CircularBuffer::CircularBuffer<int, 5> buffer;
+             * 
+             * std::cout << "Buffer max size: " << buffer.max_size() << std::endl; // Output: Buffer max size: 5
+             * @endcode
+             */
+            size_type capacity(void) const {
+                return get_capacity();
+            }// end size_type capacity(void) const
             //--------------------------
             /**
              * @brief Clears the buffer.
@@ -958,91 +999,59 @@ namespace CircularBuffer {
                 return get_median();
             }//end std::optional<T> median(void) const
             //--------------------------
-            template <size_t M = N>
-            std::enable_if_t<(M > 0), typename std::array<T, N>::iterator> begin(void) {
+            iterator begin(void) {
                 return m_buffer.begin();
-            }//end typename std::array<T, N>::iterator begin(void)
+            }//end iterator begin(void)
             //--------------------------
-            template <size_t M = N>
-            std::enable_if_t<(M > 0), typename std::array<T, N>::iterator> end(void) {
+            iterator end(void) {
                 return m_buffer.end();
-            }// end typename std::array<T, N>::iterator
+            }//end iterator end(void)
             //--------------------------
-            template <size_t M = N>
-            std::enable_if_t<(M > 0), typename std::array<T, N>::const_iterator> begin(void) const {
+            const_iterator begin(void) const {
                 return m_buffer.begin();
-            }// end typename std::array<T, N>::const_iterator begin(void) const
+            }//end const_iterator begin(void) const
             //--------------------------
-            template <size_t M = N>
-            std::enable_if_t<(M > 0), typename std::array<T, N>::const_iterator> end(void) const {
+            const_iterator end(void) const {
                 return m_buffer.end();
-            }//end typename std::array<T, N>::const_iterator end(void) const
+            }//end const_iterator end(void) const
             //--------------------------
-            template <size_t M = N>
-            std::enable_if_t<(M > 0), typename std::array<T, N>::const_iterator> cbegin(void) const {
+            const_iterator cbegin(void) const {
                 return m_buffer.cbegin();
-            }//end typename std::array<T, N>::const_iterator cbegin(void) const
+            }//end const_iterator cbegin(void) const
             //--------------------------
-            template <size_t M = N>
-            std::enable_if_t<(M > 0), typename std::array<T, N>::const_iterator> cend(void) const {
+            const_iterator cend(void) const {
                 return m_buffer.cend();
-            }//end typename std::array<T, N>::const_iterator cend(void) const
+            }//end const_iterator cend(void) const
             //--------------------------
-            template <size_t M = N>
-            std::enable_if_t<(M > 0), typename std::array<T, N>::reverse_iterator> rbegin(void) {
+            reverse_iterator rbegin(void) {
                 return m_buffer.rbegin();
-            }//end typename std::array<T, N>::reverse_iterator rbegin(void)
+            }//end reverse_iterator rbegin(void)
             //--------------------------
-            template <size_t M = N>
-            std::enable_if_t<(M > 0), typename std::array<T, N>::reverse_iterator> rend(void) {
+            reverse_iterator rend(void) {
                 return m_buffer.rend();
-            }//end typename std::array<T, N>::reverse_iterator rend(void)
+            }//end reverse_iterator rend(void)
             //--------------------------
-            template <size_t M = N>
-            std::enable_if_t<(M == 0), typename std::vector<T>::iterator> begin(void) {
-                return m_buffer.begin();
-            }//end typename std::vector<T>::iterator begin(void)
-            //--------------------------
-            template <size_t M = N>
-            std::enable_if_t<(M == 0), typename std::vector<T>::iterator> end(void) {
-                return m_buffer.end();
-            }// end typename std::vector<T>::iterator
-            //--------------------------
-            template <size_t M = N>
-            std::enable_if_t<(M == 0), typename std::vector<T>::const_iterator> begin(void) const {
-                return m_buffer.begin();
-            }// end typename std::vector<T>::const_iterator begin(void) const
-            //--------------------------
-            template <size_t M = N>
-            std::enable_if_t<(M == 0), typename std::vector<T>::const_iterator> end(void) const {
-                return m_buffer.end();
-            }//end typename std::vector<T>::const_iterator end(void) const
-            //--------------------------
-            template <size_t M = N>
-            std::enable_if_t<(M == 0), typename std::vector<T>::const_iterator> cbegin(void) const {
-                return m_buffer.cbegin();
-            }//end typename std::vector<T>::const_iterator cbegin(void) const
-            //--------------------------
-            template <size_t M = N>
-            std::enable_if_t<(M == 0), typename std::vector<T>::const_iterator> cend(void) const {
-                return m_buffer.cend();
-            }//end typename std::vector<T>::const_iterator cend(void) const
-            //--------------------------
-            template <size_t M = N>
-            std::enable_if_t<(M == 0), typename std::vector<T>::reverse_iterator> rbegin(void) {
+            const_reverse_iterator rbegin(void) const {
                 return m_buffer.rbegin();
-            }//end typename std::vector<T>::reverse_iterator rbegin(void)
+            }//end const_reverse_iterator rbegin(void) const
             //--------------------------
-            template <size_t M = N>
-            std::enable_if_t<(M == 0), typename std::vector<T>::reverse_iterator> rend(void) {
+            const_reverse_iterator rend(void) const {
                 return m_buffer.rend();
-            }//end typename std::vector<T>::reverse_iterator rend(void)
+            }//end const_reverse_iterator rend(void) const
+            //--------------------------
+            const_reverse_iterator crbegin(void) const {
+                return m_buffer.crbegin();
+            }//end const_reverse_iterator crbegin(void) const
+            //--------------------------
+            const_reverse_iterator crend(void) const {
+                return m_buffer.crend();
+            }//end const_reverse_iterator crend(void) const
             //--------------------------------------------------------------
         protected:
             //--------------------------------------------------------------
-            size_t insert(void) {
+            size_type insert(void) {
                 //--------------------------
-                size_t current_tail{0UL}, next_tail{0UL};
+                size_type current_tail{0UL}, next_tail{0UL};
                 //--------------------------
                 do {
                     current_tail = m_tail.load(std::memory_order_relaxed);
@@ -1057,11 +1066,11 @@ namespace CircularBuffer {
                 //--------------------------
                 return current_tail;
                 //--------------------------
-            } //end size_t insert(void)
+            } //end size_type insert(void)
             //--------------------------
-            std::optional<size_t> read_insert(void) {
+            std::optional<size_type> read_insert(void) {
                 //--------------------------
-                size_t current_head{0}, next_head{0};
+                size_type current_head{0}, next_head{0};
                 //--------------------------
                 do {
                     //--------------------------
@@ -1081,7 +1090,7 @@ namespace CircularBuffer {
                 //--------------------------
                 return current_head;
                 //--------------------------
-            } //end std::optional<size_t> read_insert(void) 
+            } //end std::optional<size_type> read_insert(void) 
             //--------------------------
             void push_back(const T& item) {
                 //--------------------------
@@ -1097,7 +1106,7 @@ namespace CircularBuffer {
             //--------------------------
             void push_back(T&& item) {
                 //--------------------------
-                const size_t current_tail = insert();
+                const size_type current_tail = insert();
                 //--------------------------
                 m_buffer.at(current_tail) = std::move(item);
                 //--------------------------
@@ -1114,7 +1123,7 @@ namespace CircularBuffer {
             template <typename... Args>
             void emplace_back(Args&&... args) {
                 //--------------------------
-                const size_t current_tail = insert();
+                const size_type current_tail = insert();
                 //--------------------------
                 new (&m_buffer[current_tail]) T(std::forward<Args>(args)...);  // Construct in-place
                 //--------------------------
@@ -1144,7 +1153,7 @@ namespace CircularBuffer {
                     return std::nullopt;
                 }// end if (is_empty())
                 //--------------------------
-                size_t _tail_position = m_tail.load(std::memory_order_acquire);
+                size_type _tail_position = m_tail.load(std::memory_order_acquire);
                 if constexpr(N > 0) {
                     _tail_position = (_tail_position == 0) ? (N - 1) : (_tail_position - 1);
                 }// end if constexpr(N > 0)
@@ -1159,7 +1168,7 @@ namespace CircularBuffer {
             //--------------------------
             std::optional<T> get_top_pop(void)  {
                 //--------------------------
-                const std::optional<size_t> current_head = read_insert();
+                const std::optional<size_type> current_head = read_insert();
                 //--------------------------
                 if (!current_head) {
                     return std::nullopt;
@@ -1183,7 +1192,7 @@ namespace CircularBuffer {
             //--------------------------
             bool pop_front(void) {
                 //--------------------------
-                const std::optional<size_t> current_head = read_insert();
+                const std::optional<size_type> current_head = read_insert();
                 //--------------------------
                 if (!current_head) {
                     return false;
@@ -1217,11 +1226,21 @@ namespace CircularBuffer {
                 }
             }// end bool full(void) const            
             //--------------------------
-            size_t get_size(void) const  {
+            size_type get_size(void) const  {
                 //--------------------------
                 return m_count.load(std::memory_order_acquire);
                 //--------------------------
-            }// end size_t get_size(void) const
+            }// end size_type get_size(void) const
+            //--------------------------
+            size_type get_capacity(void) const {
+                //--------------------------
+                if constexpr (N > 0) {
+                    return N;
+                } else {
+                    return m_max_size;
+                }// end if constexpr (N > 0)
+                //--------------------------
+            }// end size_type get_capacity(void) const
             //--------------------------
             void clear(void) {
                 //--------------------------
@@ -1235,19 +1254,14 @@ namespace CircularBuffer {
                 //--------------------------
             }// end void clear(void)
             //--------------------------
-            size_t increment(const size_t& value) const {
+            size_type increment(const size_type& value) const {
                 if constexpr(N == 0) {
                     return (value + 1) % (m_max_size == 0 ? 1 : m_max_size);
                 } else {
                     return (value + 1) % N;
                 }// end if constexpr(N == 0)
                 //--------------------------
-            }// end size_t increment(const size_t& value) const
-            //--------------------------
-            template <size_t M = N>
-            std::enable_if_t<(M == 0), size_t> increment(const size_t& value) const {
-                return (value + 1) % (m_max_size == 0 ? 1 : m_max_size); 
-            }// end size_t increment(const size_t& value) const
+            }// end size_type increment(const size_type& value) const
             //--------------------------
             template <typename U = T>
             std::enable_if_t<std::is_arithmetic<U>::value, std::optional<U>> get_sum(void) const {
@@ -1278,7 +1292,7 @@ namespace CircularBuffer {
                     return std::nullopt;
                 }//end if(is_empty())
                 //--------------------------
-                const size_t count_ = m_count.load(std::memory_order_relaxed);
+                const size_type count_ = m_count.load(std::memory_order_relaxed);
                 //--------------------------
                 if (count_ < 2) {
                     return std::nullopt;
@@ -1408,8 +1422,8 @@ namespace CircularBuffer {
                 }//end if(is_empty())
                 //--------------------------
                 auto sorted_buffer          = m_buffer;
-                const size_t count_         = m_count.load(std::memory_order_relaxed);
-                const size_t half_count_    = count_ / 2UL;
+                const size_type count_         = m_count.load(std::memory_order_relaxed);
+                const size_type half_count_    = count_ / 2UL;
                 //--------------------------
                 if (count_ == 1) {
                     return static_cast<double>(sorted_buffer.at(0));
@@ -1493,14 +1507,14 @@ namespace CircularBuffer {
             //--------------------------------------------------------------
         private:
             //--------------------------------------------------------------
-            std::atomic<size_t> m_head, m_tail, m_count;
+            std::atomic<size_type> m_head, m_tail, m_count;
             typename std::conditional<std::is_arithmetic<T>::value, std::atomic<T>, std::nullptr_t>::type m_sum, m_sum_squares;
-            typename std::conditional<(N == 0), size_t, std::nullptr_t>::type m_max_size;
+            typename std::conditional<(N == 0), size_type, std::nullptr_t>::type m_max_size;
             typename std::conditional<(N == 0), std::vector<T>, std::array<T, N>>::type m_buffer;
             //--------------------------
             void pop_front_unsafe(void)  {
                 //--------------------------
-                size_t current_head{0}, next_head{0};
+                size_type current_head{0}, next_head{0};
                 //--------------------------
                 do {
                     //--------------------------
