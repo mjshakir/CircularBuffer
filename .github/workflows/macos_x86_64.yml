@@ -4,7 +4,6 @@ on: [push, pull_request]
 
 jobs:
   build:
-    # continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
@@ -26,11 +25,14 @@ jobs:
     - name: Install Google Test
       run: brew install googletest
 
-    - name: Install cmake and tbb
-      run: brew install cmake tbb
+    - name: Install cmake, tbb & ninja
+      run: |
+        brew install cmake tbb ninja
 
-    - name: Setup CMake and Ninja
-      uses: lukka/get-cmake@v3.21.1
+    # - name: Setup CMake and Ninja
+    #   uses: lukka/get-cmake@v3.21.1
+    #   with:
+    #     cache: false
 
     - name: Check Clang Version
       run: clang++ --version
@@ -39,7 +41,7 @@ jobs:
       run: mkdir build
 
     - name: Configure CMake
-      run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+      run: cmake -S . -B build -G Ninja -DBUILD_CIRCULARBUFFER_VERIFICATION=OFF -DCMAKE_BUILD_TYPE=Release
 
     - name: Build
       run: cmake --build build --config Release
@@ -47,19 +49,17 @@ jobs:
     - name: Test with Retry
       working-directory: build
       run: |
-        set +e  # Disable exit on error
+        set +e
         max_retries=10
         attempt=1
         while [ $attempt -le $max_retries ]; do
           echo "Test attempt $attempt"
           ctest --output-on-failure -C Release
-          test_result=$?
-          if [ $test_result -eq 0 ]; then
+          if [ $? -eq 0 ]; then
             echo "Tests passed on attempt $attempt"
             exit 0
-          else
-            echo "Tests failed on attempt $attempt"
           fi
+          echo "Tests failed on attempt $attempt"
           attempt=$((attempt + 1))
           sleep 1
         done

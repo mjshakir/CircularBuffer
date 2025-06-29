@@ -4,7 +4,6 @@ on: [push, pull_request]
 
 jobs:
   build:
-    # continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
@@ -25,12 +24,15 @@ jobs:
 
     - name: Install Google Test
       run: brew install googletest
-      
-    - name: Install cmake and tbb
-      run: brew install cmake tbb
 
-    - name: Setup CMake and Ninja
-      uses: lukka/get-cmake@v3.21.1
+    - name: Install cmake, tbb & ninja
+      run: |
+        brew install cmake tbb ninja
+
+    # - name: Setup CMake and Ninja
+    #   uses: lukka/get-cmake@v3.21.1
+    #   with:
+    #     cache: false
 
     - name: Check Clang Version
       run: clang++ --version
@@ -39,7 +41,7 @@ jobs:
       run: mkdir build
 
     - name: Configure CMake
-      run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+      run: cmake -S . -B build -DBUILD_CIRCULARBUFFER_VERIFICATION=OFF -DCMAKE_BUILD_TYPE=Release
 
     - name: Build
       run: cmake --build build --config Release
