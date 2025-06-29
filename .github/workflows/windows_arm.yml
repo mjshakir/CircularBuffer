@@ -2,16 +2,14 @@ name: Windows ARM
 
 on: [push, pull_request]
 
-env:
-  BUILD_TYPE: Release
-
 jobs:
   build:
-    runs-on: windows-latest
     strategy:
       fail-fast: false
       matrix:
         arch: [arm]
+
+    runs-on: windows-latest
 
     steps:
     - name: Checkout code
@@ -19,77 +17,48 @@ jobs:
 
     - name: Install vcpkg
       run: |
-        git clone https://github.com/microsoft/vcpkg.git
+        git clone https://github.com/microsoft/vcpkg.git vcpkg
         .\vcpkg\bootstrap-vcpkg.bat
-        echo "VCPKG_ROOT=$(pwd)\vcpkg" >> $GITHUB_ENV
-        echo "CMAKE_TOOLCHAIN_FILE=$(pwd)\vcpkg\scripts\buildsystems\vcpkg.cmake" >> $GITHUB_ENV
 
     - name: Install libraries via vcpkg
       run: |
-        .\vcpkg\vcpkg.exe install cmake:arm64-windows gtest:arm64-windows tbb:arm64-windows
+        .\vcpkg\vcpkg.exe install gtest:arm64-windows tbb:arm64-windows
         .\vcpkg\vcpkg.exe integrate install
 
     - name: Setup MSVC
       uses: ilammy/msvc-dev-cmd@v1
 
-    - name: Check MSVC Version
-      id: check_msvc
-      shell: pwsh
-      run: |
-        $out = cl 2>&1
-        if ($m = $out | Select-String "Version (\d+\.\d+)") {
-          $v = [Version]$m.Matches[0].Groups[1].Value
-          Write-Host "MSVC version: $v"
-          if ($v -lt [Version]"19.28") { throw "MSVC < 19.28" }
-        } else {
-          Write-Host "Could not detect MSVC version; skipping"
-          echo "::set-output name=skip_step::true"
-        }
-
-    - name: Create build dir
-      if: steps.check_msvc.outputs.skip_step != 'true'
+    - name: Create build directory
       run: mkdir build
 
-    - name: Verify vcpkg packages
-      run: .\vcpkg\vcpkg.exe list
-
     - name: Configure CMake
-      if: steps.check_msvc.outputs.skip_step != 'true'
-      shell: pwsh
       run: |
-        Write-Host "Using toolchain: $env:CMAKE_TOOLCHAIN_FILE"
         cmake -S . -B build `
-          -G Ninja `
+          -G "Visual Studio 17 2022" `
+          -A ARM64 `
           -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
-          -DCMAKE_TOOLCHAIN_FILE=$env:CMAKE_TOOLCHAIN_FILE `
-          -DBUILD_CIRCULARBUFFER_MULTI_THREADING=ON `
-          -DBUILD_CIRCULARBUFFER_VERIFICATION=OFF
+          -DCMAKE_TOOLCHAIN_FILE=${{ env.CMAKE_TOOLCHAIN_FILE }}
 
     - name: Build
       run: cmake --build build --config ${{ env.BUILD_TYPE }} --verbose
 
-    - name: List build outputs
-      shell: pwsh
-      run: dir build\ /s
-
     - name: Test with Retry
       shell: pwsh
-      working-directory: build
       run: |
-        $max=10; $i=1
-        while ($i -le $max) {
-          Write-Host "Test attempt $i"
-          ctest -C ${{ env.BUILD_TYPE }} --output-on-failure
-          if ($LASTEXITCODE -eq 0) { exit 0 }
-          $i++; Start-Sleep 1
+        $max_retries = 10
+        $attempt = 1
+        while ($attempt -le $max_retries) {
+          Write-Output "Test attempt $attempt"
+          ctest --output-on-failure -C Release
+          if ($LASTEXITCODE -eq 0) {
+            Write-Output "Tests passed on attempt $attempt"
+            exit 0
+          } else {
+            Write-Output "Tests failed on attempt $attempt"
+          }
+          $attempt++
+          Start-Sleep -Seconds 1
         }
-        Write-Host "All $max attempts failed"; exit 1
-
-    - name: Diagnostics on failure
-      if: failure()
-      shell: pwsh
-      run: |
-        Write-Host "=== build tree ==="
-        dir build\ /s
-        Write-Host "=== lib outputs ==="
-        dir lib\${{ env.BUILD_TYPE }}\ /s
+        Write-Output "All $max_retries attempts failed"
+        exit 1
+      working-directory: build

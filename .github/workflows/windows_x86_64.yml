@@ -19,78 +19,60 @@ jobs:
 
     - name: Install vcpkg
       run: |
-        git clone https://github.com/microsoft/vcpkg.git
+        git clone https://github.com/microsoft/vcpkg.git vcpkg
         .\vcpkg\bootstrap-vcpkg.bat
-        echo "VCPKG_ROOT=$(pwd)\vcpkg" >> $GITHUB_ENV
-        echo "CMAKE_TOOLCHAIN_FILE=$(pwd)\vcpkg\scripts\buildsystems\vcpkg.cmake" >> $GITHUB_ENV
 
     - name: Install libraries via vcpkg
       run: |
-        .\vcpkg\vcpkg.exe install cmake:x64-windows gtest:x64-windows tbb:x64-windows
+        .\vcpkg\vcpkg.exe install gtest:x86-windows tbb:x86-windows
         .\vcpkg\vcpkg.exe integrate install
 
     - name: Setup MSVC
       uses: ilammy/msvc-dev-cmd@v1
 
-    - name: Check MSVC Version
-      id: check_msvc
-      shell: pwsh
-      run: |
-        $versionOutput = cl 2>&1
-        $match = $versionOutput | Select-String -Pattern "Version (\d+\.\d+)"
-        if ($match) {
-          $version = [Version]$match.Matches[0].Groups[1].Value
-          Write-Output "MSVC version: $version"
-          if ($version -lt [Version]"19.28") {
-            throw "MSVC < 19.28"
-          }
-        } else {
-          Write-Output "Could not detect MSVC version, skipping check."
-          echo "::set-output name=skip_step::true"
-        }
-
     - name: Create build directory
-      if: steps.check_msvc.outputs.skip_step != 'true'
       run: mkdir build
-
-    - name: Verify vcpkg packages
-      run: .\vcpkg\vcpkg.exe list
 
     - name: Configure CMake
       run: |
-        echo "Using toolchain: $env:CMAKE_TOOLCHAIN_FILE"
         cmake -S . -B build `
-          -G "Ninja" `
+          -G "Visual Studio 17 2022" `
+          -A Win32 `
           -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
-          -DCMAKE_TOOLCHAIN_FILE=$env:CMAKE_TOOLCHAIN_FILE `
-          -DBUILD_CIRCULARBUFFER_MULTI_THREADING=OFF `
-          -DBUILD_CIRCULARBUFFER_VERIFICATION=OFF
+          -DCMAKE_TOOLCHAIN_FILE=${{ env.CMAKE_TOOLCHAIN_FILE }}
 
     - name: Build
       run: cmake --build build --config ${{ env.BUILD_TYPE }} --verbose
 
-    - name: List build outputs
+    - name: List build and lib directory contents
       run: |
-        dir build\ /s
+        ls -R build/
+        ls -R build/lib/
 
     - name: Test with Retry
       shell: pwsh
       working-directory: build
       run: |
-        $max=10; $i=1
-        while ($i -le $max) {
-          Write-Host "Test attempt $i"
-          ctest -C ${{ env.BUILD_TYPE }} --output-on-failure
-          if ($LASTEXITCODE -eq 0) { exit 0 }
-          $i++; Start-Sleep 1
+        $max_retries = 10
+        $attempt = 1
+        while ($attempt -le $max_retries) {
+          Write-Output "Test attempt $attempt"
+          ctest --output-on-failure -C ${{ env.BUILD_TYPE }}
+          if ($LASTEXITCODE -eq 0) {
+            Write-Output "Tests passed on attempt $attempt"
+            exit 0
+          }
+          Write-Output "Tests failed on attempt $attempt"
+          $attempt++
+          Start-Sleep -Seconds 1
         }
-        Write-Host "All $max attempts failed"; exit 1
+        Write-Output "All $max_retries attempts failed"
+        exit 1
 
-    - name: Diagnostics on failure
+    - name: Diagnostics if build fails
       if: failure()
       shell: pwsh
       run: |
-        Write-Host "=== build tree ==="
-        dir build\ /s
-        Write-Host "=== lib directory ==="
-        dir lib\Release\ /s
+        echo "Build failed. Listing build directory contents:"
+        ls -R build/
+        Get-ChildItem -Path .\lib\Release\ -Recurse -Name
