@@ -54,6 +54,7 @@ option(BUILD_CIRCULARBUFFER_SHARED_LIBS "Build using shared libraries" ON)
 option(BUILD_CIRCULARBUFFER_EXAMPLE "Build CircularBuffer example" ${CIRCULARBUFFER_STANDALONE_PROJECT})
 option(BUILD_CIRCULARBUFFER_TESTS "Build CircularBuffer tests" ${CIRCULARBUFFER_STANDALONE_PROJECT})
 option(BUILD_CIRCULARBUFFER_BENCHMARK "Build CircularBuffer benchmarks" ${CIRCULARBUFFER_STANDALONE_PROJECT})
+option(BUILD_CIRCULARBUFFER_VERIFICATION "Build formal verification tests" ${CIRCULARBUFFER_STANDALONE_PROJECT})
 option(BUILD_CIRCULARBUFFER_MULTI_THREADING "Enable multi-threading support." OFF)
 set(CIRCULARBUFFER_MULTI_THREADING BUILD_CIRCULARBUFFER_MULTI_THREADING CACHE BOOL "Enable multi-threading support.")
 set(HAS_TBB OFF CACHE BOOL "Set to TRUE if TBB is found, otherwise FALSE")
@@ -173,6 +174,11 @@ endif()
 # Enable benchmarks and add the benchmark directory if this is a standalone project
 if(BUILD_CIRCULARBUFFER_BENCHMARK AND CIRCULARBUFFER_STANDALONE_PROJECT)
     add_subdirectory(benchmark)
+endif()
+#------------------------------------------------------------------------------------------
+# Enable formal verification if this is a standalone project
+if(BUILD_CIRCULARBUFFER_VERIFICATION AND CIRCULARBUFFER_STANDALONE_PROJECT)
+    add_subdirectory(verification)
 endif()
 #------------------------------------------------------------------------------------------
 # Export the library targets (only if it's a standalone project)
