@@ -1,0 +1,84 @@
+name: Ubuntu x86_64 Formal Verification
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+
+        # CMake + Ninja
+        sudo apt-get install -y cmake ninja-build
+
+        # Clang 16 toolchain (for ESBMC front-end)
+        sudo apt-get install -y clang-16 clang++-16 \
+          llvm-16-dev libclang-common-16-dev libclang-cpp16-dev
+
+        # Valgrind (Helgrind/DRD)
+        sudo apt-get install -y valgrind
+
+        # SMT solvers
+        sudo apt-get install -y \
+          z3 libz3-dev \
+          boolector libboolector-dev \
+          cvc4 libcvc4-dev \
+          cvc5 libcvc5-dev \
+          yices libyices-dev
+
+    - name: Install ESBMC (apt or build from source)
+      run: |
+        if ! sudo apt-get install -y esbmc; then
+          echo "ESBMC not in apt, building from source…"
+          sudo apt-get install -y git build-essential \
+            python3 bison flex libboost-all-dev libffi-dev
+          git clone https://github.com/esbmc/esbmc.git /tmp/esbmc-src
+          pushd /tmp/esbmc-src
+            mkdir build && cd build
+            cmake .. \
+              -DCMAKE_C_COMPILER=clang-16 \
+              -DCMAKE_CXX_COMPILER=clang++-16 \
+              -DENABLE_Z3=ON \
+              -DENABLE_BOOLECTOR=ON \
+              -DENABLE_CVC4=ON \
+              -DENABLE_CVC5=ON \
+              -DENABLE_YICES=ON \
+              -DBUILD_MULTI_THREADING=ON \
+              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              -G Ninja
+            ninja -j$(nproc)
+            sudo ninja install
+          popd
+        fi
+
+    - name: Check tool versions
+      run: |
+        clang++-16 --version
+        ninja --version
+        valgrind --version
+        esbmc --version
+
+    - name: Configure CMake (verification only)
+      run: cmake -S . -B build \
+        -DCMAKE_C_COMPILER=clang-16 \
+        -DCMAKE_CXX_COMPILER=clang++-16 \
+        -DBUILD_CIRCULARBUFFER_VERIFICATION=ON \
+        -DDOWNLOAD_DEPENDENCIES=OFF \
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo
+
+    - name: Build & Run `verify` target
+      run: cmake --build build --target verify -- -j$(nproc)
+
+    - name: Upload verification logs
+      uses: actions/upload-artifact@v3
+      with:
+        name: formal-results
+        path: build/formal_results/
