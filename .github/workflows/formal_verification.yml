@@ -26,7 +26,7 @@ jobs:
           cvc5 libcvc5-dev \
           minisat \
           libcryptominisat5-dev \
-          autoconf automake libtool pkg-config libgmp-dev
+          autoconf automake libtool pkg-config m4 gettext gperf libgmp-dev
           # libpicosat-dev
 
     - name: Build Btor2Tools from source
