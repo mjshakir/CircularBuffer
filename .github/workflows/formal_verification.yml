@@ -7,7 +7,7 @@ on:
 jobs:
   verify:
     #runs-on: ubuntu-latest
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
 
     steps:
     - name: Checkout code
@@ -19,7 +19,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y \
           cmake ninja-build \
-          clang-17 clang++-17 llvm-17-dev libclang-common-17-dev libclang-cpp17-dev \
+          clang-16 clang++-16 llvm-16-dev libclang-common-16-dev libclang-cpp16-dev \
           valgrind \
           z3 libz3-dev \
           cvc4 libcvc4-dev \
@@ -88,8 +88,8 @@ jobs:
         pushd /tmp/esbmc
           mkdir build && cd build
           cmake .. \
-            -DCMAKE_C_COMPILER=clang-17 \
-            -DCMAKE_CXX_COMPILER=clang++-17 \
+            -DCMAKE_C_COMPILER=clang-16 \
+            -DCMAKE_CXX_COMPILER=clang++-16 \
             -DENABLE_Z3=ON \
             -DENABLE_BOOLECTOR=ON \
             -DENABLE_YICES=ON \
