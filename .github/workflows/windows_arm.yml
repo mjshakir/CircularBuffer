@@ -2,14 +2,18 @@ name: Windows ARM
 
 on: [push, pull_request]
 
+env:
+  BUILD_TYPE: Release
+  # make sure this points to your vcpkg toolchain
+  CMAKE_TOOLCHAIN_FILE: ${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake
+
 jobs:
   build:
+    runs-on: windows-latest
     strategy:
       fail-fast: false
       matrix:
         arch: [arm]
-
-    runs-on: windows-latest
 
     steps:
     - name: Checkout code
@@ -22,16 +26,26 @@ jobs:
 
     - name: Install libraries via vcpkg
       run: |
-        .\vcpkg\vcpkg.exe install gtest:arm64-windows tbb:arm64-windows
+        .\vcpkg\vcpkg.exe install cmake:arm64-windows gtest:arm64-windows tbb:arm64-windows
         .\vcpkg\vcpkg.exe integrate install
 
-    - name: Setup MSVC
+    - name: Setup MSVC environment
       uses: ilammy/msvc-dev-cmd@v1
+
+    - name: Verify toolchain file
+      shell: pwsh
+      run: |
+        if (-not (Test-Path $env:CMAKE_TOOLCHAIN_FILE)) {
+          Write-Error "Toolchain file not found: $env:CMAKE_TOOLCHAIN_FILE"
+          exit 1
+        }
+        Write-Host "Using toolchain: $env:CMAKE_TOOLCHAIN_FILE"
 
     - name: Create build directory
       run: mkdir build
 
     - name: Configure CMake
+      shell: pwsh
       run: |
         cmake -S . -B build `
           -G "Visual Studio 17 2022" `
@@ -44,21 +58,14 @@ jobs:
 
     - name: Test with Retry
       shell: pwsh
-      run: |
-        $max_retries = 10
-        $attempt = 1
-        while ($attempt -le $max_retries) {
-          Write-Output "Test attempt $attempt"
-          ctest --output-on-failure -C Release
-          if ($LASTEXITCODE -eq 0) {
-            Write-Output "Tests passed on attempt $attempt"
-            exit 0
-          } else {
-            Write-Output "Tests failed on attempt $attempt"
-          }
-          $attempt++
-          Start-Sleep -Seconds 1
-        }
-        Write-Output "All $max_retries attempts failed"
-        exit 1
       working-directory: build
+      run: |
+        $max=10; $i=1
+        while ($i -le $max) {
+          Write-Host "Test attempt $i"
+          ctest -C ${{ env.BUILD_TYPE }} --output-on-failure
+          if ($LASTEXITCODE -eq 0) { exit 0 }
+          $i++; Start-Sleep 1
+        }
+        Write-Host "All $max attempts failed"
+        exit 1
