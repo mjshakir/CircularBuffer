@@ -25,8 +25,8 @@ jobs:
           cvc4 libcvc4-dev \
           cvc5 libcvc5-dev \
           minisat \
-          libcryptominisat5-dev \
-          libpicosat-dev
+          libcryptominisat5-dev #\
+          # libpicosat-dev
 
     - name: Build Btor2Tools from source
       run: |
