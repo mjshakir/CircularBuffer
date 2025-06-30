@@ -24,7 +24,7 @@ jobs:
           cvc4 libcvc4-dev \
           cvc5 libcvc5-dev
 
-        - name: Build Btor2Tools from source
+    - name: Build Btor2Tools from source
       run: |
         set -eux
         git clone https://github.com/Boolector/btor2tools.git /tmp/btor2tools-src
