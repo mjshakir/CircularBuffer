@@ -26,8 +26,7 @@ jobs:
           cvc5 libcvc5-dev \
           minisat \
           libcryptominisat5-dev \
-          autoconf automake libtool pkg-config m4 gettext gperf libgmp-dev \
-          esbmc
+          autoconf automake libtool pkg-config m4 gettext gperf libgmp-dev
           # libpicosat-dev
 
     - name: Build Btor2Tools from source
@@ -79,6 +78,27 @@ jobs:
           # install into /usr/local
           sudo make install
 
+        popd
+
+    - name: Build ESBMC from source
+      run: |
+        set -eux
+        git clone https://github.com/esbmc/esbmc.git /tmp/esbmc
+        pushd /tmp/esbmc
+          mkdir build && cd build
+          cmake .. \
+            -DCMAKE_C_COMPILER=clang-16 \
+            -DCMAKE_CXX_COMPILER=clang++-16 \
+            -DENABLE_Z3=ON \
+            -DENABLE_BOOLECTOR=ON \
+            -DENABLE_YICES=ON \
+            -DENABLE_CVC4=ON \
+            -DENABLE_CVC5=ON \
+            -DBUILD_MULTI_THREADING=ON \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+            -G Ninja
+          ninja -j$(nproc)
+          sudo ninja install
         popd
 
     - name: Check tool versions
