@@ -25,7 +25,8 @@ jobs:
           cvc4 libcvc4-dev \
           cvc5 libcvc5-dev \
           minisat \
-          libcryptominisat5-dev #\
+          libcryptominisat5-dev \
+          autoconf automake libtool pkg-config libgmp-dev
           # libpicosat-dev
 
     - name: Build Btor2Tools from source
@@ -59,16 +60,24 @@ jobs:
     - name: Build Yices from source
       run: |
         set -eux
+        # clone & bootstrap
         git clone https://github.com/SRI-CSL/yices2.git /tmp/yices2-src
         pushd /tmp/yices2-src
-          mkdir build && cd build
-          cmake .. \
-            -DBUILD_SHARED_LIBS=ON \
-            -DBUILD_STATIC_LIBS=OFF \
-            -DCMAKE_BUILD_TYPE=Release \
-            -G Ninja
-          ninja -j$(nproc)
-          sudo ninja install
+
+          # generate the configure script
+          autoconf
+
+          # configure & build
+          ./configure \
+            --prefix=/usr/local \
+            --enable-shared \
+            --disable-static \
+            --enable-thread-safe
+          make -j$(nproc)
+
+          # install into /usr/local
+          sudo make install
+
         popd
 
     - name: Check tool versions
