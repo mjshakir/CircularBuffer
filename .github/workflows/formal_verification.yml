@@ -1,4 +1,4 @@
-name: Ubuntu x86_64 Formal Verification
+name: Formal Verification
 
 on:
   push:
@@ -15,49 +15,34 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-
-        # CMake + Ninja
-        sudo apt-get install -y cmake ninja-build
-
-        # Clang 16 toolchain (for ESBMC front-end)
-        sudo apt-get install -y clang-16 clang++-16 \
-          llvm-16-dev libclang-common-16-dev libclang-cpp16-dev
-
-        # Valgrind (Helgrind/DRD)
-        sudo apt-get install -y valgrind
-
-        # SMT solvers
         sudo apt-get install -y \
+          cmake ninja-build \
+          clang-16 clang++-16 llvm-16-dev libclang-common-16-dev libclang-cpp16-dev \
+          valgrind \
           z3 libz3-dev \
           boolector libboolector-dev \
           cvc4 libcvc4-dev \
           cvc5 libcvc5-dev \
           yices libyices-dev
 
-    - name: Install ESBMC (apt or build from source)
+    - name: Build ESBMC from source
       run: |
-        if ! sudo apt-get install -y esbmc; then
-          echo "ESBMC not in apt, building from source…"
-          sudo apt-get install -y git build-essential \
-            python3 bison flex libboost-all-dev libffi-dev
-          git clone https://github.com/esbmc/esbmc.git /tmp/esbmc-src
-          pushd /tmp/esbmc-src
-            mkdir build && cd build
-            cmake .. \
-              -DCMAKE_C_COMPILER=clang-16 \
-              -DCMAKE_CXX_COMPILER=clang++-16 \
-              -DENABLE_Z3=ON \
-              -DENABLE_BOOLECTOR=ON \
-              -DENABLE_CVC4=ON \
-              -DENABLE_CVC5=ON \
-              -DENABLE_YICES=ON \
-              -DBUILD_MULTI_THREADING=ON \
-              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-              -G Ninja
-            ninja -j$(nproc)
-            sudo ninja install
-          popd
-        fi
+        git clone --depth 1 https://github.com/esbmc/esbmc.git /tmp/esbmc
+        mkdir /tmp/esbmc/build && pushd /tmp/esbmc/build
+        cmake .. \
+          -DCMAKE_C_COMPILER=clang-16 \
+          -DCMAKE_CXX_COMPILER=clang++-16 \
+          -DENABLE_Z3=ON \
+          -DENABLE_BOOLECTOR=ON \
+          -DENABLE_CVC4=ON \
+          -DENABLE_CVC5=ON \
+          -DENABLE_YICES=ON \
+          -DBUILD_MULTI_THREADING=ON \
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+          -G Ninja
+        ninja -j$(nproc)
+        sudo ninja install
+        popd
 
     - name: Check tool versions
       run: |
@@ -72,7 +57,8 @@ jobs:
         -DCMAKE_CXX_COMPILER=clang++-16 \
         -DBUILD_CIRCULARBUFFER_VERIFICATION=ON \
         -DDOWNLOAD_DEPENDENCIES=OFF \
-        -DCMAKE_BUILD_TYPE=RelWithDebInfo
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+        -G Ninja
 
     - name: Build & Run `verify` target
       run: cmake --build build --target verify -- -j$(nproc)
