@@ -24,6 +24,20 @@ jobs:
           cvc4 libcvc4-dev \
           cvc5 libcvc5-dev
 
+        - name: Build Btor2Tools from source
+      run: |
+        set -eux
+        git clone https://github.com/Boolector/btor2tools.git /tmp/btor2tools-src
+        pushd /tmp/btor2tools-src
+          mkdir build && cd build
+          cmake .. \
+            -DBUILD_SHARED_LIBS=ON \
+            -DCMAKE_BUILD_TYPE=Release \
+            -G Ninja
+          ninja -j$(nproc)
+          sudo ninja install
+        popd
+
     - name: Build Boolector from source
       run: |
         set -eux
