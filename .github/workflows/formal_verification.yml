@@ -93,6 +93,8 @@ jobs:
             -DLLVM_CONFIG_EXECUTABLE=/usr/bin/llvm-config-16 \
             -DClang_EXECUTABLE=/usr/bin/clang-16 \
             -DClang_DIR=/usr/lib/llvm-16/lib/cmake/clang \
+            -DCVC4_DIR=/usr/lib/x86_64-linux-gnu/cmake/cvc4 \
+            -DCVC5_DIR=/usr/lib/x86_64-linux-gnu/cmake/cvc5 \
             -DENABLE_Z3=ON \
             -DENABLE_BOOLECTOR=ON \
             -DENABLE_YICES=ON \
