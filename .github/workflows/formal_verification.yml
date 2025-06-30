@@ -7,7 +7,7 @@ on:
 jobs:
   verify:
     #runs-on: ubuntu-latest
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     steps:
     - name: Checkout code
@@ -90,6 +90,9 @@ jobs:
           cmake .. \
             -DCMAKE_C_COMPILER=clang-16 \
             -DCMAKE_CXX_COMPILER=clang++-16 \
+            -DLLVM_CONFIG_EXECUTABLE=/usr/bin/llvm-config-16 \
+            -DClang_EXECUTABLE=/usr/bin/clang-16 \
+            -DClang_DIR=/usr/lib/llvm-16/lib/cmake/clang \
             -DENABLE_Z3=ON \
             -DENABLE_BOOLECTOR=ON \
             -DENABLE_YICES=ON \
