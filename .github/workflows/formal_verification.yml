@@ -14,34 +14,43 @@ jobs:
 
     - name: Install system dependencies
       run: |
+        set -eux
         sudo apt-get update
         sudo apt-get install -y \
           cmake ninja-build \
           clang-16 clang++-16 llvm-16-dev libclang-common-16-dev libclang-cpp16-dev \
           valgrind \
           z3 libz3-dev \
-          boolector libboolector-dev \
           cvc4 libcvc4-dev \
-          cvc5 libcvc5-dev \
-          yices libyices-dev
+          cvc5 libcvc5-dev
 
-    - name: Build ESBMC from source
+    - name: Build Boolector from source
       run: |
-        git clone --depth 1 https://github.com/esbmc/esbmc.git /tmp/esbmc
-        mkdir /tmp/esbmc/build && pushd /tmp/esbmc/build
-        cmake .. \
-          -DCMAKE_C_COMPILER=clang-16 \
-          -DCMAKE_CXX_COMPILER=clang++-16 \
-          -DENABLE_Z3=ON \
-          -DENABLE_BOOLECTOR=ON \
-          -DENABLE_CVC4=ON \
-          -DENABLE_CVC5=ON \
-          -DENABLE_YICES=ON \
-          -DBUILD_MULTI_THREADING=ON \
-          -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-          -G Ninja
-        ninja -j$(nproc)
-        sudo ninja install
+        set -eux
+        git clone https://github.com/Boolector/boolector.git /tmp/boolector-src
+        pushd /tmp/boolector-src
+          mkdir build && cd build
+          cmake .. \
+            -DBUILD_SHARED_LIBS=ON \
+            -DCMAKE_BUILD_TYPE=Release \
+            -G Ninja
+          ninja -j$(nproc)
+          sudo ninja install
+        popd
+
+    - name: Build Yices from source
+      run: |
+        set -eux
+        git clone https://github.com/SRI-CSL/yices2.git /tmp/yices2-src
+        pushd /tmp/yices2-src
+          mkdir build && cd build
+          cmake .. \
+            -DBUILD_SHARED_LIBS=ON \
+            -DBUILD_STATIC_LIBS=OFF \
+            -DCMAKE_BUILD_TYPE=Release \
+            -G Ninja
+          ninja -j$(nproc)
+          sudo ninja install
         popd
 
     - name: Check tool versions
