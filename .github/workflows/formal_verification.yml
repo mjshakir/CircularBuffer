@@ -22,7 +22,11 @@ jobs:
           valgrind \
           z3 libz3-dev \
           cvc4 libcvc4-dev \
-          cvc5 libcvc5-dev
+          cvc5 libcvc5-dev \
+          minisat libminisat-dev \
+          libcadical-dev \
+          libcryptominisat5-dev \
+          libpicosat-dev
 
     - name: Build Btor2Tools from source
       run: |
