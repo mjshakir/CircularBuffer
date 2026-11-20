@@ -11,6 +11,7 @@
 #include <cmath>
 #include <algorithm>
 #include <functional>
+#include <utility>
 #if __has_include(<execution>)
     #if defined(HAS_TBB) && defined(CIRCULARBUFFER_MULTI_THREADING)
         #include <execution>
@@ -30,6 +31,12 @@ namespace CircularBuffer {
      * @details This class provides a fixed-size or dynamic-size  circular buffer for any data type T. It is thread-safe and 
      * includes additional statistical methods for arithmetic types. If the buffer is full, new elements will
      * overwrite the oldest elements. The buffer can be used with a fixed-size std::array or a dynamic-size std::vector.
+     *
+     * @note The move constructor and the move assignment hand the storage over (a std::vector's block is stolen, a
+     * std::array is moved element by element) and copy nothing else. They are valid only while no other thread uses
+     * either buffer. The member functions try_emplace() and consume() are for ONE producer thread and ONE consumer
+     * thread: try_emplace() never overwrites, and consume() reads the oldest item where it sits. Every other
+     * function keeps its meaning, many producers and many consumers included.
      *
      * @tparam T Type of elements stored in the buffer.
      * @tparam N Size of the buffer.default value is 0
@@ -297,8 +304,11 @@ namespace CircularBuffer {
              * @brief Move constructor.
              *
              * @details Initializes the buffer by moving the values from another CircularBuffer instance. This constructor
-             * transfers ownership of the other buffer's state to the new buffer, leaving the other buffer in a valid but
-             * unspecified state.
+             * transfers ownership of the other buffer's state to the new buffer. The storage is moved, not copied: the
+             * block of a std::vector changes hands (its address stays), and a std::array is moved element by element.
+             * The values of the atomics are carried over with explicit loads and stores. The other buffer is left empty
+             * (count, head and tail 0; for a dynamic-size buffer also without storage and with size 0), so it can only be
+             * destroyed or assigned to. Valid only while no other thread uses either buffer.
              *
              * @param other The CircularBuffer instance to move from.
              *
@@ -317,13 +327,38 @@ namespace CircularBuffer {
              * }
              * @endcode
              */
-            CircularBuffer(CircularBuffer&& other)              = default; 
+            CircularBuffer(CircularBuffer&& other) noexcept(N == 0 || std::is_nothrow_move_constructible_v<T>) :
+                                                            m_head(other.m_head.load(std::memory_order_relaxed)),
+                                                            m_tail(other.m_tail.load(std::memory_order_relaxed)),
+                                                            m_count(other.m_count.load(std::memory_order_relaxed)),
+                                                            m_buffer(std::move(other.m_buffer)){
+                //--------------------------
+                if constexpr (std::is_arithmetic_v<T>) {
+                    m_sum           = other.m_sum.load(std::memory_order_relaxed);
+                    m_sum_squares   = other.m_sum_squares.load(std::memory_order_relaxed);
+                    other.m_sum.store(T{}, std::memory_order_relaxed);
+                    other.m_sum_squares.store(T{}, std::memory_order_relaxed);
+                }//end if constexpr (std::is_arithmetic_v<T>)
+                //--------------------------
+                if constexpr (N == 0) {
+                    m_max_size          = other.m_max_size;
+                    other.m_max_size    = 0UL;
+                }//end if constexpr (N == 0)
+                //--------------------------
+                other.m_head.store(0UL, std::memory_order_relaxed);
+                other.m_tail.store(0UL, std::memory_order_relaxed);
+                other.m_count.store(0UL, std::memory_order_relaxed);
+                //--------------------------
+            }// end CircularBuffer(CircularBuffer&& other)
             //--------------------------
             /**
              * @brief Move assignment operator.
              *
              * Moves the values from another CircularBuffer instance to this instance. This operator transfers ownership
-             * of the other buffer's state to this buffer, leaving the other buffer in a valid but unspecified state.
+             * of the other buffer's state to this buffer. The storage is moved, not copied, the values of the atomics are
+             * carried over with explicit loads and stores, and the other buffer is left empty, as for the move
+             * constructor. The elements this buffer held are given up. Valid only while no other thread uses either
+             * buffer.
              *
              * @param other The CircularBuffer instance to move from.
              * @return A reference to this CircularBuffer instance.
@@ -344,7 +379,36 @@ namespace CircularBuffer {
              * }
              * @endcode
              */
-            CircularBuffer& operator=(CircularBuffer&& other) = default;
+            CircularBuffer& operator=(CircularBuffer&& other) noexcept(N == 0 || std::is_nothrow_move_assignable_v<T>) {
+                //--------------------------
+                if(this == &other){
+                    return *this;
+                }//end if(this == &other)
+                //--------------------------
+                m_buffer            = std::move(other.m_buffer);
+                m_head.store(other.m_head.load(std::memory_order_relaxed), std::memory_order_relaxed);
+                m_tail.store(other.m_tail.load(std::memory_order_relaxed), std::memory_order_relaxed);
+                m_count.store(other.m_count.load(std::memory_order_relaxed), std::memory_order_relaxed);
+                //--------------------------
+                if constexpr (std::is_arithmetic_v<T>) {
+                    m_sum.store(other.m_sum.load(std::memory_order_relaxed), std::memory_order_relaxed);
+                    m_sum_squares.store(other.m_sum_squares.load(std::memory_order_relaxed), std::memory_order_relaxed);
+                    other.m_sum.store(T{}, std::memory_order_relaxed);
+                    other.m_sum_squares.store(T{}, std::memory_order_relaxed);
+                }//end if constexpr (std::is_arithmetic_v<T>)
+                //--------------------------
+                if constexpr (N == 0) {
+                    m_max_size          = other.m_max_size;
+                    other.m_max_size    = 0UL;
+                }//end if constexpr (N == 0)
+                //--------------------------
+                other.m_head.store(0UL, std::memory_order_relaxed);
+                other.m_tail.store(0UL, std::memory_order_relaxed);
+                other.m_count.store(0UL, std::memory_order_relaxed);
+                //--------------------------
+                return *this;
+                //--------------------------
+            }// end CircularBuffer& operator=(CircularBuffer&& other)
             //--------------------------
             ~CircularBuffer(void) = default;
             //--------------------------
@@ -542,6 +606,73 @@ namespace CircularBuffer {
             std::optional<T> top_pop(void) {
                 return get_top_pop();
             }// end std::optional<T> pop(void)
+            //--------------------------
+            /**
+             * @brief Emplaces an item to the back of the buffer, or refuses when the buffer is full.
+             *
+             * @details This method constructs a new item in place at the back of the buffer, in its slot, with no copy
+             * of the item. Unlike emplace() it never removes the oldest item: when the buffer is full it returns false
+             * and changes nothing. For ONE producer thread (with, at most, one other thread consuming): only the
+             * consumer lowers the count, so a buffer seen not full stays not full until this call has written its slot.
+             *
+             * @tparam Args Types of arguments for constructing the item.
+             * @param args Arguments for constructing the item.
+             * @return True if the item was constructed, false if the buffer was full.
+             *
+             * @example usage:
+             * @code
+             * CircularBuffer::CircularBuffer<std::pair<int, std::string>, 2> buffer;
+             * buffer.try_emplace(1, "One");   // true
+             * buffer.try_emplace(2, "Two");   // true
+             * buffer.try_emplace(3, "Three"); // false: the buffer is full and keeps 1 and 2
+             * @endcode
+             */
+            template <typename... Args>
+            bool try_emplace(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args&&...>) {
+                //--------------------------
+                if (full()) {
+                    return false;
+                }// end if (full())
+                //--------------------------
+                emplace_back(std::forward<Args>(args)...);
+                //--------------------------
+                return true;
+                //--------------------------
+            }// end bool try_emplace(Args&&... args)
+            //--------------------------
+            /**
+             * @brief Gives the oldest item to a function where it sits, then removes it.
+             *
+             * @details This method calls fn with a const reference to the oldest item of the buffer, then removes that
+             * item. The item is not copied. If the buffer is empty it returns false and fn is not called. For ONE
+             * consumer thread: a second consumer could remove the item while fn reads it. The slot goes back to the
+             * producer only after fn has returned.
+             *
+             * @tparam Fn A callable taking a const reference to T.
+             * @param fn The function that reads the oldest item.
+             * @return True if an item was read and removed, false if the buffer was empty.
+             *
+             * @example usage:
+             * @code
+             * CircularBuffer::CircularBuffer<int, 5> buffer;
+             * buffer.push(1);
+             * buffer.push(2);
+             *
+             * buffer.consume([](const int& item) { std::cout << "Oldest: " << item << std::endl; }); // Oldest: 1
+             * @endcode
+             */
+            template <typename Fn>
+            bool consume(Fn&& fn) noexcept(std::is_nothrow_invocable_v<Fn&&, const T&>) {
+                //--------------------------
+                if (is_empty()) {
+                    return false;
+                }// end if (is_empty())
+                //--------------------------
+                std::forward<Fn>(fn)(std::as_const(m_buffer[m_head.load(std::memory_order_acquire)]));
+                //--------------------------
+                return pop_front();
+                //--------------------------
+            }// end bool consume(Fn&& fn)
             //--------------------------
             /**
              * @brief Checks if the buffer is empty.
