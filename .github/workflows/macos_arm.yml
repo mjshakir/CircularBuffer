@@ -2,6 +2,15 @@ name: macOS ARM
 
 on: [push, pull_request]
 
+# Least privilege: the jobs only read the repository.
+permissions:
+  contents: read
+
+# A newer push to the same branch or pull request cancels the older run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     # continue-on-error: true
@@ -14,7 +23,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v7
 
     - name: Setup Homebrew
       run: |
@@ -29,8 +38,10 @@ jobs:
     - name: Install cmake and tbb
       run: brew install cmake tbb
 
-    - name: Setup CMake and Ninja
-      uses: lukka/get-cmake@v3.21.1
+    # CMake and Ninja are preinstalled on every hosted image (the runner-images
+    # READMEs); lukka/get-cmake is not needed and its old cache client fails.
+    - name: Show CMake version
+      run: cmake --version
 
     - name: Check Clang Version
       run: clang++ --version
