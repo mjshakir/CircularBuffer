@@ -5,6 +5,7 @@
 #include <optional>
 #include <array>
 #include <vector>
+#include <span>
 #include <atomic>
 #include <type_traits>
 #include <cstddef>
@@ -12,6 +13,7 @@
 #include <algorithm>
 #include <functional>
 #include <utility>
+#include <iterator>
 #if __has_include(<execution>)
     #if defined(HAS_TBB) && defined(CIRCULARBUFFER_MULTI_THREADING)
         #include <execution>
@@ -31,6 +33,11 @@ namespace CircularBuffer {
      * @details This class provides a fixed-size or dynamic-size  circular buffer for any data type T. It is thread-safe and 
      * includes additional statistical methods for arithmetic types. If the buffer is full, new elements will
      * overwrite the oldest elements. The buffer can be used with a fixed-size std::array or a dynamic-size std::vector.
+     * It derives from its container through a protected base: a std::vector for N == 0, a std::array for N above 0, a
+     * std::span for N == std::dynamic_extent (the objects belong to the caller; the buffer assigns into them and never
+     * constructs or destroys them; the buffer cannot be copied, and a moved-from one has capacity 0). A user reaches
+     * only the buffer's own functions and the iteration of the container (begin, end, rbegin, rend and the c-versions),
+     * which walks the storage from slot 0, not the ring from the oldest item.
      *
      * @note The move constructor and the move assignment hand the storage over (a std::vector's block is stolen, a
      * std::array is moved element by element) and copy nothing else. They are valid only while no other thread uses
@@ -66,7 +73,7 @@ namespace CircularBuffer {
      * @endcode
      */
     template <typename T, size_t N = 0UL>
-    class CircularBuffer {
+    class CircularBuffer : protected std::conditional<(N == 0), std::vector<T>, typename std::conditional<(N == std::dynamic_extent), std::span<T>, std::array<T, N>>::type>::type {
         //--------------------------------------------------------------
         public:
             //--------------------------------------------------------------
@@ -77,18 +84,14 @@ namespace CircularBuffer {
             using const_pointer          = const value_type*;
             using size_type              = size_t;
             using difference_type        = std::ptrdiff_t;
-            using iterator               = typename std::conditional<(N == 0), 
-                                            typename std::vector<T>::iterator, 
-                                            typename std::array<T, N>::iterator>::type;
-            using const_iterator         = typename std::conditional<(N == 0), 
-                                            typename std::vector<T>::const_iterator, 
-                                            typename std::array<T, N>::const_iterator>::type;
-            using reverse_iterator       = typename std::conditional<(N == 0), 
-                                            typename std::vector<T>::reverse_iterator, 
-                                            typename std::array<T, N>::reverse_iterator>::type;
-            using const_reverse_iterator = typename std::conditional<(N == 0), 
-                                            typename std::vector<T>::const_reverse_iterator, 
-                                            typename std::array<T, N>::const_reverse_iterator>::type;
+            using iterator               = typename std::conditional<(N == 0), std::vector<T>, typename std::conditional<(N == std::dynamic_extent), std::span<T>, std::array<T, N>>::type>::type::iterator;
+            using const_iterator         = typename std::conditional<(N == std::dynamic_extent),
+                                            typename std::span<const T>::iterator,
+                                            typename std::conditional<(N == 0 || N == std::dynamic_extent), std::vector<T>, std::array<T, N>>::type::const_iterator>::type;
+            using reverse_iterator       = typename std::conditional<(N == 0), std::vector<T>, typename std::conditional<(N == std::dynamic_extent), std::span<T>, std::array<T, N>>::type>::type::reverse_iterator;
+            using const_reverse_iterator = typename std::conditional<(N == std::dynamic_extent),
+                                            typename std::span<const T>::reverse_iterator,
+                                            typename std::conditional<(N == 0 || N == std::dynamic_extent), std::vector<T>, std::array<T, N>>::type::const_reverse_iterator>::type;
             //--------------------------------------------------------------
         public:
             //--------------------------------------------------------------
@@ -111,7 +114,7 @@ namespace CircularBuffer {
              * }
              * @endcode
              */
-            template <typename U = T, std::enable_if_t<!std::is_arithmetic<U>::value && (N > 0), int> = 0>
+            template <typename U = T, std::enable_if_t<!std::is_arithmetic<U>::value && ((N > 0 && N != std::dynamic_extent)), int> = 0>
             CircularBuffer(void) : m_head(0UL), m_tail(0UL), m_count(0UL) {
                 //--------------------------
             }// end CircularBuffer(void)
@@ -141,7 +144,7 @@ namespace CircularBuffer {
              * }
              * @endcode
              */
-            template <typename U = T, std::enable_if_t<std::is_arithmetic<U>::value && (N > 0), int> = 0>
+            template <typename U = T, std::enable_if_t<std::is_arithmetic<U>::value && ((N > 0 && N != std::dynamic_extent)), int> = 0>
             CircularBuffer(void) : m_head(0UL), m_tail(0UL), m_count(0UL), m_sum(0UL), m_sum_squares(0UL){
                 //--------------------------
             }// end CircularBuffer(void)
@@ -168,7 +171,7 @@ namespace CircularBuffer {
              * @endcode
              */
             template <typename U = T, std::enable_if_t<!std::is_arithmetic<U>::value && (N == 0), int> = 0>
-            CircularBuffer(const size_type& size) : m_head(0UL), m_tail(0UL), m_count(0UL), m_max_size(size), m_buffer(size) {
+            CircularBuffer(const size_type& size) : std::vector<T>(size), m_head(0UL), m_tail(0UL), m_count(0UL), m_max_size(size) {
                 //--------------------------
             }// end CircularBuffer(void)
             //--------------------------
@@ -200,15 +203,59 @@ namespace CircularBuffer {
              * @endcode
              */
             template <typename U = T, std::enable_if_t<std::is_arithmetic<U>::value && (N == 0), int> = 0>
-            CircularBuffer(const size_type& size) :    m_head(0UL),
+            CircularBuffer(const size_type& size) :    std::vector<T>(size),
+                                                    m_head(0UL),
                                                     m_tail(0UL),
                                                     m_count(0UL),
                                                     m_sum(0UL),
                                                     m_sum_squares(0UL),
-                                                    m_max_size(size),
-                                                    m_buffer(size) {
+                                                    m_max_size(size) {
                 //--------------------------
             }// end CircularBuffer(void)
+            //--------------------------
+            /**
+             * @brief Constructor of a buffer whose slots are objects the caller owns, for non-arithmetic types.
+             *
+             * @details Initializes an empty buffer over storage: the capacity is storage.size(). The buffer allocates nothing
+             * and neither constructs nor destroys the objects of storage; it assigns into them as it assigns into its own
+             * slots. An empty storage gives a buffer of capacity 0, which stores nothing and answers every call. The
+             * objects must outlive the buffer (a buffer moved to is the one that uses them) and be used by no one else
+             * while the buffer lives. One thread constructs; afterwards the rules of the class for one producer thread and
+             * one consumer thread hold unchanged. A copy of the buffer owns its own memory.
+             *
+             * @param storage The caller's objects; a temporary container is refused at compile time.
+             *
+             * @example usage:
+             * @code
+             * std::array<std::string, 3UL> memory;
+             * CircularBuffer::CircularBuffer<std::string> buffer(memory);
+             * std::cout << buffer.capacity() << std::endl; // Output: 3
+             * @endcode
+             */
+            template <typename U = T, std::enable_if_t<!std::is_arithmetic<U>::value && (N == std::dynamic_extent), int> = 0>
+            explicit CircularBuffer(std::span<T> storage) noexcept : std::span<T>(storage), m_head(0UL), m_tail(0UL), m_count(0UL), m_max_size(storage.size()) {
+                //--------------------------
+            }// end CircularBuffer(std::span<T> storage)
+            //--------------------------
+            /**
+             * @brief Constructor of a buffer whose slots are objects the caller owns, for arithmetic types.
+             *
+             * @details As the constructor for non-arithmetic types, and head, tail, count, sum and sum of squares start
+             * at 0.
+             *
+             * @param storage The caller's objects; a temporary container is refused at compile time.
+             */
+            template <typename U = T, std::enable_if_t<std::is_arithmetic<U>::value && (N == std::dynamic_extent), int> = 0>
+            explicit CircularBuffer(std::span<T> storage) noexcept :
+                                                    std::span<T>(storage),
+                                                    m_head(0UL),
+                                                    m_tail(0UL),
+                                                    m_count(0UL),
+                                                    m_sum(0UL),
+                                                    m_sum_squares(0UL),
+                                                    m_max_size(storage.size()) {
+                //--------------------------
+            }// end CircularBuffer(std::span<T> storage)
             //--------------------------
             /**
              * @brief Copy constructor.
@@ -234,21 +281,24 @@ namespace CircularBuffer {
              * }
              * @endcode
              */
-            CircularBuffer(const CircularBuffer& other) :   m_head(other.m_head.load()), 
+            CircularBuffer(const CircularBuffer& other) requires (N != std::dynamic_extent) :   std::conditional<(N == 0), std::vector<T>, typename std::conditional<(N == std::dynamic_extent), std::span<T>, std::array<T, N>>::type>::type(other),
+                                                            m_head(other.m_head.load()), 
                                                             m_tail(other.m_tail.load()), 
-                                                            m_count(other.m_count.load()), 
-                                                            m_buffer(other.m_buffer){
+                                                            m_count(other.m_count.load()){
                 //--------------------------
                 if constexpr (std::is_arithmetic_v<T>) {
                     m_sum           = other.m_sum.load();
                     m_sum_squares   = other.m_sum_squares.load();
                 }//end if constexpr (std::is_arithmetic_v<T>)
                 //--------------------------
-                if constexpr (N == 0) {
+                if constexpr ((N == 0 || N == std::dynamic_extent)) {
                     m_max_size  = other.m_max_size;
-                }//end if constexpr (N > 0)
+                }//end if constexpr ((N > 0 && N != std::dynamic_extent))
                 //--------------------------
             }// end CircularBuffer(const CircularBuffer& other)
+            //--------------------------
+            // Two rings on one memory are refused; without this line the buffer would copy-construct as a view of the other's range.
+            CircularBuffer(const CircularBuffer& other) requires (N == std::dynamic_extent) = delete;
             //--------------------------
             /**
              * @brief Copy assignment operator.
@@ -276,7 +326,7 @@ namespace CircularBuffer {
              * }
              * @endcode
              */
-            CircularBuffer& operator=(const CircularBuffer& other) {
+            CircularBuffer& operator=(const CircularBuffer& other) requires (N != std::dynamic_extent) {
                 //--------------------------
                 if(this == &other){
                     return *this;
@@ -285,20 +335,22 @@ namespace CircularBuffer {
                 m_head              = other.m_head.load();
                 m_tail              = other.m_tail.load();
                 m_count             = other.m_count.load();
-                m_buffer            = other.m_buffer;
+                std::conditional<(N == 0), std::vector<T>, typename std::conditional<(N == std::dynamic_extent), std::span<T>, std::array<T, N>>::type>::type::operator=(other);
                 //--------------------------
                 if constexpr (std::is_arithmetic_v<T>) {
                     m_sum           = other.m_sum.load();
                     m_sum_squares   = other.m_sum_squares.load();
                 }//end if constexpr (std::is_arithmetic_v<T>)
                 //--------------------------
-                if constexpr (N == 0) {
+                if constexpr ((N == 0 || N == std::dynamic_extent)) {
                     m_max_size      = other.m_max_size;
-                }//end if constexpr (N > 0)
+                }//end if constexpr ((N > 0 && N != std::dynamic_extent))
                 //--------------------------
                 return *this;
                 //--------------------------
             }// end CircularBuffer& operator=(const CircularBuffer& other)
+            //--------------------------
+            CircularBuffer& operator=(const CircularBuffer& other) requires (N == std::dynamic_extent) = delete;
             //--------------------------
             /**
              * @brief Move constructor.
@@ -327,11 +379,11 @@ namespace CircularBuffer {
              * }
              * @endcode
              */
-            CircularBuffer(CircularBuffer&& other) noexcept(N == 0 || std::is_nothrow_move_constructible_v<T>) :
+            CircularBuffer(CircularBuffer&& other) noexcept((N == 0 || N == std::dynamic_extent) || std::is_nothrow_move_constructible_v<T>) :
+                                                            std::conditional<(N == 0), std::vector<T>, typename std::conditional<(N == std::dynamic_extent), std::span<T>, std::array<T, N>>::type>::type(std::move(other)),
                                                             m_head(other.m_head.load(std::memory_order_relaxed)),
                                                             m_tail(other.m_tail.load(std::memory_order_relaxed)),
-                                                            m_count(other.m_count.load(std::memory_order_relaxed)),
-                                                            m_buffer(std::move(other.m_buffer)){
+                                                            m_count(other.m_count.load(std::memory_order_relaxed)){
                 //--------------------------
                 if constexpr (std::is_arithmetic_v<T>) {
                     m_sum           = other.m_sum.load(std::memory_order_relaxed);
@@ -340,10 +392,14 @@ namespace CircularBuffer {
                     other.m_sum_squares.store(T{}, std::memory_order_relaxed);
                 }//end if constexpr (std::is_arithmetic_v<T>)
                 //--------------------------
-                if constexpr (N == 0) {
+                if constexpr ((N == 0 || N == std::dynamic_extent)) {
                     m_max_size          = other.m_max_size;
                     other.m_max_size    = 0UL;
-                }//end if constexpr (N == 0)
+                }//end if constexpr ((N == 0 || N == std::dynamic_extent))
+                //--------------------------
+                if constexpr (N == std::dynamic_extent) {
+                    static_cast<std::span<T>&>(other) = std::span<T>(); // the source keeps no slots
+                }//end if constexpr (N == std::dynamic_extent)
                 //--------------------------
                 other.m_head.store(0UL, std::memory_order_relaxed);
                 other.m_tail.store(0UL, std::memory_order_relaxed);
@@ -379,13 +435,13 @@ namespace CircularBuffer {
              * }
              * @endcode
              */
-            CircularBuffer& operator=(CircularBuffer&& other) noexcept(N == 0 || std::is_nothrow_move_assignable_v<T>) {
+            CircularBuffer& operator=(CircularBuffer&& other) noexcept((N == 0 || N == std::dynamic_extent) || std::is_nothrow_move_assignable_v<T>) {
                 //--------------------------
                 if(this == &other){
                     return *this;
                 }//end if(this == &other)
                 //--------------------------
-                m_buffer            = std::move(other.m_buffer);
+                std::conditional<(N == 0), std::vector<T>, typename std::conditional<(N == std::dynamic_extent), std::span<T>, std::array<T, N>>::type>::type::operator=(std::move(other));
                 m_head.store(other.m_head.load(std::memory_order_relaxed), std::memory_order_relaxed);
                 m_tail.store(other.m_tail.load(std::memory_order_relaxed), std::memory_order_relaxed);
                 m_count.store(other.m_count.load(std::memory_order_relaxed), std::memory_order_relaxed);
@@ -397,10 +453,14 @@ namespace CircularBuffer {
                     other.m_sum_squares.store(T{}, std::memory_order_relaxed);
                 }//end if constexpr (std::is_arithmetic_v<T>)
                 //--------------------------
-                if constexpr (N == 0) {
+                if constexpr ((N == 0 || N == std::dynamic_extent)) {
                     m_max_size          = other.m_max_size;
                     other.m_max_size    = 0UL;
-                }//end if constexpr (N == 0)
+                }//end if constexpr ((N == 0 || N == std::dynamic_extent))
+                //--------------------------
+                if constexpr (N == std::dynamic_extent) {
+                    static_cast<std::span<T>&>(other) = std::span<T>(); // the source keeps no slots
+                }//end if constexpr (N == std::dynamic_extent)
                 //--------------------------
                 other.m_head.store(0UL, std::memory_order_relaxed);
                 other.m_tail.store(0UL, std::memory_order_relaxed);
@@ -414,6 +474,7 @@ namespace CircularBuffer {
             //--------------------------
             /**
              * @brief Pushes an item to the back of the buffer.
+             * A buffer with no slots (capacity 0) stores nothing: the call does nothing, as try_emplace() returns false.
              *
              * @details This method adds a new item to the back of the buffer. If the buffer is full, it will 
              * remove the item from the front to make space for the new item.
@@ -439,6 +500,7 @@ namespace CircularBuffer {
             //--------------------------
             /**
              * @brief Pushes an item to the back of the buffer using move semantics.
+             * A buffer with no slots (capacity 0) stores nothing: the call does nothing, as try_emplace() returns false.
              *
              * @details This method adds a new item to the back of the buffer, moving the item instead of copying it. 
              * If the buffer is full, it will remove the item from the front to make space for the new item.
@@ -466,6 +528,7 @@ namespace CircularBuffer {
             //--------------------------
             /**
              * @brief Emplaces an item to the back of the buffer.
+             * A buffer with no slots (capacity 0) stores nothing: the call does nothing, as try_emplace() returns false.
              *
              * @details This method constructs a new item in place at the back of the buffer. If the buffer is full, 
              * it will remove the item from the front to make space for the new item.
@@ -668,7 +731,7 @@ namespace CircularBuffer {
                     return false;
                 }// end if (is_empty())
                 //--------------------------
-                std::forward<Fn>(fn)(std::as_const(m_buffer[m_head.load(std::memory_order_acquire)]));
+                std::forward<Fn>(fn)(std::as_const(this->operator[](m_head.load(std::memory_order_acquire))));
                 //--------------------------
                 return pop_front();
                 //--------------------------
@@ -988,7 +1051,7 @@ namespace CircularBuffer {
              * @endcode
              */
             template <typename U = T>
-            std::enable_if_t<std::is_arithmetic<U>::value && (N > 0), std::optional<std::array<T, N>>> sorted(void) const {
+            std::enable_if_t<std::is_arithmetic<U>::value && ((N > 0 && N != std::dynamic_extent)), std::optional<std::array<T, N>>> sorted(void) const {
                 return get_sorted();
             }//end std::optional<std::array<T, N>> sorted(void) const
             //--------------------------
@@ -1022,7 +1085,7 @@ namespace CircularBuffer {
              * @endcode
              */
             template <typename U = T>
-            std::enable_if_t<std::is_arithmetic<U>::value && (N > 0), std::optional<std::array<T, N>>> reverse_sorted(void) const {
+            std::enable_if_t<std::is_arithmetic<U>::value && ((N > 0 && N != std::dynamic_extent)), std::optional<std::array<T, N>>> reverse_sorted(void) const {
                 return get_reverse_sorted();
             }//end std::optional<std::array<T, N>> reverse_sorted(void) const
             //--------------------------
@@ -1056,7 +1119,7 @@ namespace CircularBuffer {
              * @endcode
              */
             template <typename U = T>
-            std::enable_if_t<std::is_arithmetic<U>::value && (N == 0), std::optional<std::vector<T>>> sorted(void) const {
+            std::enable_if_t<std::is_arithmetic<U>::value && ((N == 0 || N == std::dynamic_extent)), std::optional<std::vector<T>>> sorted(void) const {
                 return get_sorted();
             }//end std::optional<std::vector<T>> sorted(void) const
             //--------------------------
@@ -1090,7 +1153,7 @@ namespace CircularBuffer {
              * @endcode
              */
             template <typename U = T>
-            std::enable_if_t<std::is_arithmetic<U>::value && (N == 0), std::optional<std::vector<T>>> reverse_sorted(void) const {
+            std::enable_if_t<std::is_arithmetic<U>::value && ((N == 0 || N == std::dynamic_extent)), std::optional<std::vector<T>>> reverse_sorted(void) const {
                 return get_reverse_sorted();
             }//end std::optional<std::vector<T>> reverse_sorted(void) const
             //--------------------------
@@ -1104,7 +1167,7 @@ namespace CircularBuffer {
              * the buffer to find the median value. If the number of elements is odd, the middle value is returned. If the number of elements
              * is even, the average of the two middle values is returned.
              *
-             * The time complexity of obtaining the median is O(N > 0) on average, but O(n^2) in the worst case due to the nth_element algorithm.
+             * The time complexity of obtaining the median is O((N > 0 && N != std::dynamic_extent)) on average, but O(n^2) in the worst case due to the nth_element algorithm.
              *
              * @return The median of the elements, or std::nullopt if the buffer is empty.
              *
@@ -1130,53 +1193,79 @@ namespace CircularBuffer {
                 return get_median();
             }//end std::optional<T> median(void) const
             //--------------------------
-            iterator begin(void) {
-                return m_buffer.begin();
-            }//end iterator begin(void)
+            // What the container offers to walk its storage from slot 0 (not the ring from the oldest item); every base has these four.
+            using std::conditional<(N == 0), std::vector<T>, typename std::conditional<(N == std::dynamic_extent), std::span<T>, std::array<T, N>>::type>::type::begin;
+            using std::conditional<(N == 0), std::vector<T>, typename std::conditional<(N == std::dynamic_extent), std::span<T>, std::array<T, N>>::type>::type::end;
+            using std::conditional<(N == 0), std::vector<T>, typename std::conditional<(N == std::dynamic_extent), std::span<T>, std::array<T, N>>::type>::type::rbegin;
+            using std::conditional<(N == 0), std::vector<T>, typename std::conditional<(N == std::dynamic_extent), std::span<T>, std::array<T, N>>::type>::type::rend;
             //--------------------------
-            iterator end(void) {
-                return m_buffer.end();
-            }//end iterator end(void)
+            /**
+             * @brief Gets a read-only iterator to the first slot of the storage.
+             *
+             * @details The slot at index 0 of the storage, not the oldest item: items sit where the ring put them (top() gives the oldest). std::span has no cbegin() before C++23, so the borrowed form answers through a read-only span over the same memory.
+             *
+             * @return A read-only iterator to the first slot.
+             */
+            const_iterator cbegin(void) const noexcept {
+                //--------------------------
+                if constexpr (N == std::dynamic_extent) {
+                    return std::span<const T>(static_cast<const std::span<T>&>(*this)).begin();
+                } else {
+                    return std::conditional<(N == 0), std::vector<T>, typename std::conditional<(N == std::dynamic_extent), std::span<T>, std::array<T, N>>::type>::type::cbegin();
+                }// end if constexpr (N == std::dynamic_extent)
+                //--------------------------
+            }// end const_iterator cbegin(void) const
             //--------------------------
-            const_iterator begin(void) const {
-                return m_buffer.begin();
-            }//end const_iterator begin(void) const
+            /**
+             * @brief Gets a read-only iterator past the last slot of the storage.
+             *
+             * @details The slot at index 0 of the storage, not the oldest item: items sit where the ring put them (top() gives the oldest). std::span has no cend() before C++23, so the borrowed form answers through a read-only span over the same memory.
+             *
+             * @return A read-only iterator one past the last slot.
+             */
+            const_iterator cend(void) const noexcept {
+                //--------------------------
+                if constexpr (N == std::dynamic_extent) {
+                    return std::span<const T>(static_cast<const std::span<T>&>(*this)).end();
+                } else {
+                    return std::conditional<(N == 0), std::vector<T>, typename std::conditional<(N == std::dynamic_extent), std::span<T>, std::array<T, N>>::type>::type::cend();
+                }// end if constexpr (N == std::dynamic_extent)
+                //--------------------------
+            }// end const_iterator cend(void) const
             //--------------------------
-            const_iterator end(void) const {
-                return m_buffer.end();
-            }//end const_iterator end(void) const
+            /**
+             * @brief Gets a read-only reverse iterator to the last slot of the storage.
+             *
+             * @details The slot at index 0 of the storage, not the oldest item: items sit where the ring put them (top() gives the oldest). std::span has no crbegin() before C++23, so the borrowed form answers through a read-only span over the same memory.
+             *
+             * @return A reverse iterator that starts at the last slot.
+             */
+            const_reverse_iterator crbegin(void) const noexcept {
+                //--------------------------
+                if constexpr (N == std::dynamic_extent) {
+                    return std::span<const T>(static_cast<const std::span<T>&>(*this)).rbegin();
+                } else {
+                    return std::conditional<(N == 0), std::vector<T>, typename std::conditional<(N == std::dynamic_extent), std::span<T>, std::array<T, N>>::type>::type::crbegin();
+                }// end if constexpr (N == std::dynamic_extent)
+                //--------------------------
+            }// end const_reverse_iterator crbegin(void) const
             //--------------------------
-            const_iterator cbegin(void) const {
-                return m_buffer.cbegin();
-            }//end const_iterator cbegin(void) const
-            //--------------------------
-            const_iterator cend(void) const {
-                return m_buffer.cend();
-            }//end const_iterator cend(void) const
-            //--------------------------
-            reverse_iterator rbegin(void) {
-                return m_buffer.rbegin();
-            }//end reverse_iterator rbegin(void)
-            //--------------------------
-            reverse_iterator rend(void) {
-                return m_buffer.rend();
-            }//end reverse_iterator rend(void)
-            //--------------------------
-            const_reverse_iterator rbegin(void) const {
-                return m_buffer.rbegin();
-            }//end const_reverse_iterator rbegin(void) const
-            //--------------------------
-            const_reverse_iterator rend(void) const {
-                return m_buffer.rend();
-            }//end const_reverse_iterator rend(void) const
-            //--------------------------
-            const_reverse_iterator crbegin(void) const {
-                return m_buffer.crbegin();
-            }//end const_reverse_iterator crbegin(void) const
-            //--------------------------
-            const_reverse_iterator crend(void) const {
-                return m_buffer.crend();
-            }//end const_reverse_iterator crend(void) const
+            /**
+             * @brief Gets a read-only reverse iterator past the first slot of the storage.
+             *
+             * @details The slot at index 0 of the storage, not the oldest item: items sit where the ring put them (top() gives the oldest). std::span has no crend() before C++23, so the borrowed form answers through a read-only span over the same memory.
+             *
+             * @return A reverse iterator one past the first slot.
+             */
+            const_reverse_iterator crend(void) const noexcept {
+                //--------------------------
+                if constexpr (N == std::dynamic_extent) {
+                    return std::span<const T>(static_cast<const std::span<T>&>(*this)).rend();
+                } else {
+                    return std::conditional<(N == 0), std::vector<T>, typename std::conditional<(N == std::dynamic_extent), std::span<T>, std::array<T, N>>::type>::type::crend();
+                }// end if constexpr (N == std::dynamic_extent)
+                //--------------------------
+            }// end const_reverse_iterator crend(void) const
             //--------------------------------------------------------------
         protected:
             //--------------------------------------------------------------
@@ -1225,7 +1314,11 @@ namespace CircularBuffer {
             //--------------------------
             void push_back(const T& item) {
                 //--------------------------
-                m_buffer.at(insert()) = item;
+                if (get_capacity() == 0UL) {
+                    return; // a buffer with no slots takes nothing
+                }// end if (get_capacity() == 0UL)
+                //--------------------------
+                this->operator[](insert()) = item;
                 //--------------------------
                 if constexpr (std::is_arithmetic<T>::value){
                     atomic_add(item);
@@ -1237,13 +1330,17 @@ namespace CircularBuffer {
             //--------------------------
             void push_back(T&& item) {
                 //--------------------------
+                if (get_capacity() == 0UL) {
+                    return; // a buffer with no slots takes nothing
+                }// end if (get_capacity() == 0UL)
+                //--------------------------
                 const size_type current_tail = insert();
                 //--------------------------
-                m_buffer.at(current_tail) = std::move(item);
+                this->operator[](current_tail) = std::move(item);
                 //--------------------------
                 if constexpr (std::is_arithmetic<T>::value){
                     //--------------------------
-                    atomic_add(m_buffer.at(current_tail));
+                    atomic_add(this->operator[](current_tail));
                     //--------------------------
                 }//end if constexpr (std::is_arithmetic<T>::value)
                 //--------------------------
@@ -1254,13 +1351,17 @@ namespace CircularBuffer {
             template <typename... Args>
             void emplace_back(Args&&... args) {
                 //--------------------------
+                if (get_capacity() == 0UL) {
+                    return; // a buffer with no slots takes nothing
+                }// end if (get_capacity() == 0UL)
+                //--------------------------
                 const size_type current_tail = insert();
                 //--------------------------
-                new (&m_buffer[current_tail]) T(std::forward<Args>(args)...);  // Construct in-place
+                new (&this->operator[](current_tail)) T(std::forward<Args>(args)...);  // Construct in-place
                 //--------------------------
                 if constexpr (std::is_arithmetic<T>::value){
                     //--------------------------
-                    atomic_add(m_buffer.at(current_tail));
+                    atomic_add(this->operator[](current_tail));
                     //--------------------------
                 }//end if constexpr (std::is_arithmetic<T>::value)
                 //--------------------------
@@ -1274,7 +1375,7 @@ namespace CircularBuffer {
                     return std::nullopt;
                 }// end if (is_empty())
                 //--------------------------
-                return m_buffer.at(m_head.load(std::memory_order_acquire));
+                return this->operator[](m_head.load(std::memory_order_acquire));
                 //--------------------------
             }//end std::optional<T> get_top(void) const
             //--------------------------
@@ -1285,15 +1386,15 @@ namespace CircularBuffer {
                 }// end if (is_empty())
                 //--------------------------
                 size_type _tail_position = m_tail.load(std::memory_order_acquire);
-                if constexpr(N > 0) {
+                if constexpr((N > 0 && N != std::dynamic_extent)) {
                     _tail_position = (_tail_position == 0) ? (N - 1) : (_tail_position - 1);
-                }// end if constexpr(N > 0)
+                }// end if constexpr((N > 0 && N != std::dynamic_extent))
                 //--------------------------
-                if constexpr(N == 0) {
+                if constexpr((N == 0 || N == std::dynamic_extent)) {
                     _tail_position = (_tail_position == 0) ? (m_max_size - 1) : (_tail_position - 1);
-                }// end if constexpr(N == 0)
+                }// end if constexpr((N == 0 || N == std::dynamic_extent))
                 //--------------------------
-                return m_buffer.at(_tail_position);
+                return this->operator[](_tail_position);
                 //--------------------------
             }//end std::optional<T> get_last(void) const
             //--------------------------
@@ -1305,9 +1406,9 @@ namespace CircularBuffer {
                     return std::nullopt;
                 }// end if (!current_head)
                 //--------------------------
-                T value = m_buffer.at(current_head.value());
+                T value = this->operator[](current_head.value());
                 //--------------------------
-                m_buffer[current_head.value()].~T();
+                this->operator[](current_head.value()).~T();
                 //--------------------------
                 if constexpr (std::is_arithmetic<T>::value) {
                     //--------------------------
@@ -1331,11 +1432,11 @@ namespace CircularBuffer {
                 //--------------------------
                 if constexpr (std::is_arithmetic<T>::value){
                     //--------------------------
-                    atomic_sub(m_buffer.at(current_head.value()));
+                    atomic_sub(this->operator[](current_head.value()));
                     //--------------------------
                 }//end if constexpr (std::is_arithmetic<T>::value)
                 //--------------------------
-                m_buffer[current_head.value()].~T();
+                this->operator[](current_head.value()).~T();
                 //--------------------------
                 m_count.fetch_sub(1, std::memory_order_acq_rel);
                 //--------------------------
@@ -1350,7 +1451,7 @@ namespace CircularBuffer {
             }// end bool is_empty(void) const
             //--------------------------
             bool full(void) const {
-                if constexpr (N == 0) {
+                if constexpr ((N == 0 || N == std::dynamic_extent)) {
                     return m_count.load(std::memory_order_acquire) == m_max_size;
                 } else {
                     return m_count.load(std::memory_order_acquire) == N;
@@ -1365,13 +1466,23 @@ namespace CircularBuffer {
             //--------------------------
             size_type get_capacity(void) const {
                 //--------------------------
-                if constexpr (N > 0) {
+                if constexpr ((N > 0 && N != std::dynamic_extent)) {
                     return N;
                 } else {
                     return m_max_size;
-                }// end if constexpr (N > 0)
+                }// end if constexpr ((N > 0 && N != std::dynamic_extent))
                 //--------------------------
             }// end size_type get_capacity(void) const
+            //--------------------------
+            typename std::conditional<((N == 0 || N == std::dynamic_extent)), std::vector<T>, std::array<T, N>>::type get_copy(void) const {
+                //--------------------------
+                if constexpr ((N == 0 || N == std::dynamic_extent)) {
+                    return std::vector<T>(this->begin(), this->end());
+                } else {
+                    return *this;
+                }// end if constexpr ((N == 0 || N == std::dynamic_extent))
+                //--------------------------
+            }// end typename std::conditional<((N == 0 || N == std::dynamic_extent)), std::vector<T>, std::array<T, N>>::type get_copy(void) const
             //--------------------------
             void clear(void) {
                 //--------------------------
@@ -1386,11 +1497,11 @@ namespace CircularBuffer {
             }// end void clear(void)
             //--------------------------
             size_type increment(const size_type& value) const {
-                if constexpr(N == 0) {
+                if constexpr((N == 0 || N == std::dynamic_extent)) {
                     return (value + 1) % (m_max_size == 0 ? 1 : m_max_size);
                 } else {
                     return (value + 1) % N;
-                }// end if constexpr(N == 0)
+                }// end if constexpr((N == 0 || N == std::dynamic_extent))
                 //--------------------------
             }// end size_type increment(const size_type& value) const
             //--------------------------
@@ -1455,9 +1566,9 @@ namespace CircularBuffer {
                 }//end if(is_empty())
                 //--------------------------
 #if defined(HAS_TBB) && defined(CIRCULARBUFFER_MULTI_THREADING)
-                return *std::min_element(std::execution::par, m_buffer.begin(), m_buffer.begin() + m_count.load(std::memory_order_relaxed));
+                return *std::min_element(std::execution::par, this->begin(), this->begin() + m_count.load(std::memory_order_relaxed));
 #else
-                return *std::min_element(m_buffer.begin(), m_buffer.begin() + m_count.load(std::memory_order_relaxed));
+                return *std::min_element(this->begin(), this->begin() + m_count.load(std::memory_order_relaxed));
 #endif
                 //--------------------------
             }//end std::optional<T> get_min(void) const
@@ -1470,21 +1581,21 @@ namespace CircularBuffer {
                 }//end if(is_empty())
                 //--------------------------
 #if defined(HAS_TBB) && defined(CIRCULARBUFFER_MULTI_THREADING)
-                return *std::max_element(std::execution::par, m_buffer.begin(), m_buffer.begin() + m_count.load(std::memory_order_relaxed));
+                return *std::max_element(std::execution::par, this->begin(), this->begin() + m_count.load(std::memory_order_relaxed));
 #else
-                return *std::max_element(m_buffer.begin(), m_buffer.begin() + m_count.load(std::memory_order_relaxed));
+                return *std::max_element(this->begin(), this->begin() + m_count.load(std::memory_order_relaxed));
 #endif
                 //--------------------------
             }//end std::optional<T> get_max(void) const
             //--------------------------
             template <typename U = T>
-            std::enable_if_t<std::is_arithmetic<U>::value && (N > 0), std::optional<std::array<T, N>>> get_sorted(void) const {
+            std::enable_if_t<std::is_arithmetic<U>::value && ((N > 0 && N != std::dynamic_extent)), std::optional<std::array<T, N>>> get_sorted(void) const {
                 //--------------------------
                 if(is_empty()){
                     return std::nullopt;
                 }//end if(is_empty())
                 //--------------------------
-                auto sorted_buffer = m_buffer;
+                std::array<T, N> sorted_buffer = *this;
 #if defined(HAS_TBB) && defined(CIRCULARBUFFER_MULTI_THREADING)
                 std::sort(std::execution::par, sorted_buffer.begin(), sorted_buffer.begin() + m_count.load(std::memory_order_relaxed));
 #else
@@ -1495,13 +1606,13 @@ namespace CircularBuffer {
             }//end std::optional<std::array<T, N>> get_sorted(void) const
             //--------------------------
             template <typename U = T>
-            std::enable_if_t<std::is_arithmetic<U>::value && (N > 0), std::optional<std::array<T, N>>> get_reverse_sorted(void) const {
+            std::enable_if_t<std::is_arithmetic<U>::value && ((N > 0 && N != std::dynamic_extent)), std::optional<std::array<T, N>>> get_reverse_sorted(void) const {
                 //--------------------------
                 if(is_empty()){
                     return std::nullopt;
                 }//end if(is_empty())
                 //--------------------------
-                auto sorted_buffer = m_buffer;
+                std::array<T, N> sorted_buffer = *this;
 #if defined(HAS_TBB) && defined(CIRCULARBUFFER_MULTI_THREADING)
                 std::sort(std::execution::par, sorted_buffer.begin(), sorted_buffer.begin() + m_count.load(std::memory_order_relaxed), std::greater<T>());
 #else
@@ -1512,13 +1623,13 @@ namespace CircularBuffer {
             }//end std::optional<std::array<T, N>> get_reverse_sorted(void) const
             //--------------------------
             template <typename U = T>
-            std::enable_if_t<std::is_arithmetic<U>::value && (N == 0), std::optional<std::vector<T>>> get_sorted(void) const {
+            std::enable_if_t<std::is_arithmetic<U>::value && ((N == 0 || N == std::dynamic_extent)), std::optional<std::vector<T>>> get_sorted(void) const {
                 //--------------------------
                 if(is_empty()){
                     return std::nullopt;
                 }//end if(is_empty())
                 //--------------------------
-                auto sorted_buffer = m_buffer;
+                std::vector<T> sorted_buffer = get_copy();
 #if defined(HAS_TBB) && defined(CIRCULARBUFFER_MULTI_THREADING)
                 std::sort(std::execution::par, sorted_buffer.begin(), sorted_buffer.begin() + m_count.load(std::memory_order_relaxed));
 #else
@@ -1529,13 +1640,13 @@ namespace CircularBuffer {
             }//end std::optional<std::vector<T>> get_sorted(void) const
             //--------------------------
             template <typename U = T>
-            std::enable_if_t<std::is_arithmetic<U>::value && (N == 0), std::optional<std::vector<T>>> get_reverse_sorted(void) const {
+            std::enable_if_t<std::is_arithmetic<U>::value && ((N == 0 || N == std::dynamic_extent)), std::optional<std::vector<T>>> get_reverse_sorted(void) const {
                 //--------------------------
                 if(is_empty()){
                     return std::nullopt;
                 }//end if(is_empty())
                 //--------------------------
-                auto sorted_buffer = m_buffer;
+                std::vector<T> sorted_buffer = get_copy();
 #if defined(HAS_TBB) && defined(CIRCULARBUFFER_MULTI_THREADING)
                 std::sort(std::execution::par, sorted_buffer.begin(), sorted_buffer.begin() + m_count.load(std::memory_order_relaxed), std::greater<T>());
 #else
@@ -1552,7 +1663,7 @@ namespace CircularBuffer {
                     return std::nullopt;
                 }//end if(is_empty())
                 //--------------------------
-                auto sorted_buffer          = m_buffer;
+                typename std::conditional<((N == 0 || N == std::dynamic_extent)), std::vector<T>, std::array<T, N>>::type sorted_buffer = get_copy();
                 const size_type count_         = m_count.load(std::memory_order_relaxed);
                 const size_type half_count_    = count_ / 2UL;
                 //--------------------------
@@ -1640,8 +1751,7 @@ namespace CircularBuffer {
             //--------------------------------------------------------------
             std::atomic<size_type> m_head, m_tail, m_count;
             typename std::conditional<std::is_arithmetic<T>::value, std::atomic<T>, std::nullptr_t>::type m_sum, m_sum_squares;
-            typename std::conditional<(N == 0), size_type, std::nullptr_t>::type m_max_size;
-            typename std::conditional<(N == 0), std::vector<T>, std::array<T, N>>::type m_buffer;
+            typename std::conditional<((N == 0 || N == std::dynamic_extent)), size_type, std::nullptr_t>::type m_max_size;
             //--------------------------
             void pop_front_unsafe(void)  {
                 //--------------------------
@@ -1659,11 +1769,11 @@ namespace CircularBuffer {
                 //--------------------------
                 if constexpr (std::is_arithmetic<T>::value){
                     //--------------------------
-                    atomic_sub(m_buffer.at(current_head));
+                    atomic_sub(this->operator[](current_head));
                     //--------------------------
                 }//end if constexpr (std::is_arithmetic<T>::value)
                 //--------------------------
-                m_buffer[current_head].~T();
+                this->operator[](current_head).~T();
                 //--------------------------
                 // Decrement the count of elements
                 //--------------------------

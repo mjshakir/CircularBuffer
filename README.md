@@ -19,6 +19,7 @@ Benchmark results are generated for each commit and pull request. You can view t
 - **Lock-Free Implementation** using `std::array` for environments where low latency is critical.
 - **Lock-Free Implementation** using `std::vector` suitable for dynamic buffer size management.
 - **Configurable** for either static or dynamic memory usage.
+- **Caller-provided storage**: the slots can sit in memory you already own, so the buffer allocates nothing.
 
 ## Getting Started
 
@@ -179,6 +180,26 @@ int main() {
     return 0;
 }
 ```
+
+## Using Your Own Memory
+A buffer built from a `std::span<T>` uses the objects you already own as its slots, so it never allocates. The span makes it a third kind of buffer, `CircularBuffer<T, std::dynamic_extent>`, next to the vector kind `CircularBuffer<T>` and the array kind `CircularBuffer<T, N>`; the lock-free algorithm is the same.
+
+```cpp
+#include <array>
+#include <span>
+#include "CircularBuffer.hpp"
+
+std::array<double, 8UL> memory;                // objects you own; they must outlive the buffer
+
+const std::span<double> view(memory);
+CircularBuffer::CircularBuffer<double, std::dynamic_extent> buffer(view); // capacity() is 8
+buffer.try_emplace(1.5);                       // one producer thread ...
+const std::optional<double> item = buffer.top_pop(); // ... and one consumer thread, as for any buffer
+```
+
+- The capacity is the size of the span; an empty span gives a buffer of capacity 0, which stores nothing and answers every call (`try_emplace()` returns `false`, `push()` and `emplace()` do nothing).
+- The buffer assigns into your objects and never constructs or destroys them. It cannot be copied (two buffers would share your memory); it can be moved, and the one moved from has capacity 0. A member of a class is declared `CircularBuffer::CircularBuffer<Item, std::dynamic_extent> ring;`.
+- Every buffer derives from its container (`std::vector<T>`, `std::array<T, N>` or `std::span<T>`) through a protected base, so you reach only the buffer's own functions and the iteration of the container (`begin`, `end`, `rbegin`, `rend` and the `c` versions), which walks the storage from slot 0, not the ring from the oldest item. Do not write through those iterators while another thread uses the buffer. Nothing can resize, erase, swap or hand out the storage behind the ring's back.
 
 ## Contributing to CircularBuffer
 We welcome contributions to `CircularBuffer`! Whether you're a seasoned developer or just starting out, there are many ways to contribute to this project.
